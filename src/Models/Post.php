@@ -30,8 +30,20 @@ class Post extends BaseModel implements PostModelContract
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function modiffier()
+    public function modifier()
     {
         return $this->belongsTo(EloquentUser::class, 'updated_by');
+    }
+
+    /**
+     * @param $value
+     * @return string
+     */
+    public function getContentAttribute($value)
+    {
+        if (!is_in_dashboard()) {
+            return do_shortcode($value);
+        }
+        return $value;
     }
 }
