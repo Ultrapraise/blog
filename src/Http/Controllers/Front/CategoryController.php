@@ -25,7 +25,7 @@ class CategoryController extends BaseFrontController
     {
         parent::__construct();
 
-        $this->themeController = \ThemesManagement::getThemeController('Category');
+        $this->themeController = themes_management()->getThemeController('Category');
 
         $this->repository = $repository;
         $this->postRepository = $postRepository;
@@ -37,8 +37,6 @@ class CategoryController extends BaseFrontController
      */
     public function handle(CategoryModelContract $item)
     {
-        $this->getMenu('category', $item->id);
-
         $this->setPageTitle($item->title);
 
         $this->dis['object'] = $item;
@@ -55,6 +53,8 @@ class CategoryController extends BaseFrontController
         if($this->themeController) {
             return $this->themeController->handle($item, $this->dis);
         }
+
+        $this->getMenu('category', $item->id);
 
         $happyMethod = '_template_' . studly_case($item->page_template);
 

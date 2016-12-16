@@ -60,7 +60,7 @@ class BootstrapModuleServiceProvider extends ServiceProvider
         /**
          * Register menu widget
          */
-        \MenuManagement::registerWidget('Categories', 'category', function () {
+        menus_management()->registerWidget('Categories', 'category', function () {
             $categories = get_categories_with_children();
             return $this->parseMenuWidgetData($categories);
         });
@@ -68,7 +68,7 @@ class BootstrapModuleServiceProvider extends ServiceProvider
         /**
          * Register menu link type
          */
-        \MenuManagement::registerLinkType('category', function ($id) {
+        menus_management()->registerLinkType('category', function ($id) {
             $category = app(CategoryRepositoryContract::class)
                 ->where('id', '=', $id)
                 ->first();

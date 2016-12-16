@@ -13,7 +13,7 @@ $moduleRoute = 'blog';
 /**
  * Admin routes
  */
-$router->group(['prefix' => $adminRoute . '/' . $moduleRoute], function (Router $router) use ($adminRoute, $moduleRoute) {
+$router->group(['prefix' => $adminRoute . '/' . $moduleRoute], function (Router $router) {
     /**
      * Put some route here
      */
@@ -80,4 +80,5 @@ $router->group(['prefix' => $adminRoute . '/' . $moduleRoute], function (Router 
 /**
  * Front site routes
  */
-$router->get('blog/{slug}.html', 'Front\ResolveBlogController@handle')->name('front.web.resolve-blog.get');
+$router->get(config('webed-blog.front_url_prefix') . '/{slug}.html', 'Front\ResolveBlogController@handle')
+    ->name('front.web.resolve-blog.get');

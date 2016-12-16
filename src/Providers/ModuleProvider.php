@@ -7,7 +7,7 @@ class ModuleProvider extends ServiceProvider
     /**
      * Bootstrap the application services.
      *
-     * @return void
+     * @return voidw
      */
     public function boot()
     {
@@ -38,6 +38,13 @@ class ModuleProvider extends ServiceProvider
     {
         //Load helpers
         load_module_helpers(__DIR__);
+
+        //Merge configs
+        $configs = split_files_with_basename($this->app['files']->glob(__DIR__ . '/../../config/*.php'));
+
+        foreach ($configs as $key => $row) {
+            $this->mergeConfigFrom($row, $key);
+        }
 
         $this->app->register(RouteServiceProvider::class);
         $this->app->register(RepositoryServiceProvider::class);

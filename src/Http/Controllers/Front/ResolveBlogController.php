@@ -32,13 +32,13 @@ class ResolveBlogController extends BaseFrontController
      * @param PostRepositoryContract|PostRepository $repository
      * @param PostController $controller
      * @param CategoryRepositoryContract|CategoryRepository $categoryRepositoryContract
-     * @param CategoryController $CategoryController
+     * @param CategoryController $categoryController
      */
     public function __construct(
         PostRepositoryContract $repository,
         PostController $controller,
         CategoryRepositoryContract $categoryRepositoryContract,
-        CategoryController $CategoryController
+        CategoryController $categoryController
     )
     {
         parent::__construct();
@@ -46,7 +46,7 @@ class ResolveBlogController extends BaseFrontController
         $this->repository = $repository;
         $this->controller = $controller;
 
-        $this->categoryController = $CategoryController;
+        $this->categoryController = $categoryController;
         $this->categoryRepository = $categoryRepositoryContract;
     }
 
@@ -70,6 +70,12 @@ class ResolveBlogController extends BaseFrontController
              */
             increase_view_count($post, $post->id);
 
+            seo()
+                ->metaDescription($post->description)
+                ->metaImage($post->thumbnail)
+                ->metaKeywords($post->keywords)
+                ->setModelObject($post);
+
             \AdminBar::registerLink('Edit this post', route('admin::blog.posts.edit.get', ['id' => $post->id]));
 
             return $this->controller->handle($post);
@@ -87,6 +93,12 @@ class ResolveBlogController extends BaseFrontController
              * Update view count
              */
             increase_view_count($category, $category->id);
+
+            seo()
+                ->metaDescription($category->description)
+                ->metaImage($category->thumbnail)
+                ->metaKeywords($category->keywords)
+                ->setModelObject($category);
 
             \AdminBar::registerLink('Edit this category', route('admin::blog.categories.edit.get', ['id' => $category->id]));
 

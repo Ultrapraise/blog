@@ -15,7 +15,7 @@ class PostController extends BaseFrontController
     {
         parent::__construct();
 
-        $this->themeController = \ThemesManagement::getThemeController('Post');
+        $this->themeController = themes_management()->getThemeController('Post');
 
         $this->repository = $repository;
     }
@@ -31,8 +31,6 @@ class PostController extends BaseFrontController
          */
         $this->dis['categoryIds'] = $item->categories()->getRelatedIds()->toArray();
 
-        $this->getMenu('category', $this->dis['categoryIds']);
-
         $this->setPageTitle($item->title);
 
         $this->dis['object'] = $item;
@@ -42,6 +40,8 @@ class PostController extends BaseFrontController
         if($this->themeController) {
             return $this->themeController->handle($item, $this->dis);
         }
+
+        $this->getMenu('category', $this->dis['categoryIds']);
 
         $happyMethod = '_template_' . studly_case($item->page_template);
         if(method_exists($this, $happyMethod)) {
