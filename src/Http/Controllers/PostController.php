@@ -1,10 +1,11 @@
 <?php namespace WebEd\Plugins\Blog\Http\Controllers;
 
 use WebEd\Base\Core\Http\Controllers\BaseAdminController;
-use WebEd\Base\Core\Support\DataTable\DataTables;
+use WebEd\Plugins\Blog\Http\DataTables\PostsListDataTable;
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\PostRepository;
+use Yajra\Datatables\Engines\BaseEngine;
 
 class PostController extends BaseAdminController
 {
@@ -26,113 +27,25 @@ class PostController extends BaseAdminController
         $this->getDashboardMenu('webed-blog-posts');
     }
 
-    public function getIndex()
+    public function getIndex(PostsListDataTable $postsListDataTable)
     {
-        $this->assets->addJavascripts('jquery-datatables');
-
         $this->setPageTitle('Posts', 'All available blog posts');
 
-        $this->dis['dataTableColumns'] = [
-            'headings' => [
-                ['name' => 'Title', 'width' => '25%'],
-                ['name' => 'Page template', 'width' => '15%'],
-                ['name' => 'Status', 'width' => '10%'],
-                ['name' => 'Sort order', 'width' => '10%'],
-                ['name' => 'Created at', 'width' => '10%'],
-                ['name' => 'Actions', 'width' => '20%'],
-            ],
-            'filter' => [
-                1 => form()->text('title', '', [
-                    'class' => 'form-control form-filter input-sm',
-                    'placeholder' => 'Search...'
-                ]),
-                2 => form()->text('page_template', '', [
-                    'class' => 'form-control form-filter input-sm',
-                    'placeholder' => 'Search...'
-                ]),
-                3 => form()->select('status', [
-                    '' => '',
-                    'activated' => 'Activated',
-                    'disabled' => 'Disabled',
-                ], null, ['class' => 'form-control form-filter input-sm'])
-            ],
-            'tableActions' => form()->select('', [
-                '' => 'Select' . '...',
-                'deleted' => 'Deleted',
-                'activated' => 'Activated',
-                'disabled' => 'Disabled',
-            ], null, [
-                'class' => 'table-group-action-input form-control input-inline input-small input-sm'
-            ])
-        ];
-
-        $this->dis['dataTableHeadings'] = json_encode([
-            ['data' => 'id', 'name' => 'id', 'searchable' => false, 'orderable' => false],
-            ['data' => 'title', 'name' => 'title'],
-            ['data' => 'page_template', 'name' => 'page_template'],
-            ['data' => 'status', 'name' => 'status'],
-            ['data' => 'order', 'name' => 'order', 'searchable' => false],
-            ['data' => 'created_at', 'name' => 'created_at', 'searchable' => false],
-            ['data' => 'actions', 'name' => 'actions', 'searchable' => false, 'orderable' => false],
-        ]);
+        $this->dis['dataTable'] = $postsListDataTable->run();
 
         return do_filter('blog.posts.index.get', $this)->viewAdmin('index-posts');
     }
 
     /**
      * Get data for DataTable
-     * @param DataTables $dataTable
+     * @param PostsListDataTable|BaseEngine $postsListDataTable
      * @return \Illuminate\Http\JsonResponse
      */
-    public function postListing(DataTables $dataTable)
+    public function postListing(PostsListDataTable $postsListDataTable)
     {
-        $data = $dataTable
-            ->of($this->repository)
-            ->with($this->groupAction())
-            ->editColumn('id', function ($item) {
-                return \Form::customCheckbox([['id[]', $item->id]]);
-            })
-            ->editColumn('status', function ($item) {
-                return \Html::label($item->status, $item->status);
-            })
-            ->addColumn('actions', function ($item) {
-                /*Edit link*/
-                $activeLink = route('admin::blog.posts.update-status.post', ['id' => $item->id, 'status' => 'activated']);
-                $disableLink = route('admin::blog.posts.update-status.post', ['id' => $item->id, 'status' => 'disabled']);
-                $deleteLink = route('admin::blog.posts.delete.delete', ['id' => $item->id]);
+        $data = $postsListDataTable->with($this->groupAction());
 
-                /*Buttons*/
-                $editBtn = link_to(route('admin::blog.posts.edit.get', ['id' => $item->id]), 'Edit', ['class' => 'btn btn-sm btn-outline green']);
-                $activeBtn = ($item->status != 'activated') ? \Form::button('Active', [
-                    'title' => 'Active this item',
-                    'data-ajax' => $activeLink,
-                    'data-method' => 'POST',
-                    'data-toggle' => 'confirmation',
-                    'class' => 'btn btn-outline blue btn-sm ajax-link',
-                    'type' => 'button',
-                ]) : '';
-                $disableBtn = ($item->status != 'disabled') ? \Form::button('Disable', [
-                    'title' => 'Disable this item',
-                    'data-ajax' => $disableLink,
-                    'data-method' => 'POST',
-                    'data-toggle' => 'confirmation',
-                    'class' => 'btn btn-outline yellow-lemon btn-sm ajax-link',
-                    'type' => 'button',
-                ]) : '';
-                $deleteBtn = \Form::button('Delete', [
-                    'title' => 'Delete this item',
-                    'data-ajax' => $deleteLink,
-                    'data-method' => 'DELETE',
-                    'data-toggle' => 'confirmation',
-                    'class' => 'btn btn-outline red-sunglo btn-sm ajax-link',
-                    'type' => 'button',
-                ]);
-
-                return $editBtn . $activeBtn . $disableBtn . $deleteBtn;
-            });
-
-        return do_filter('datatables.pages.index.post', $data, $this)
-            ->make(true);
+        return do_filter('datatables.blog.posts.index.post', $data, $this);
     }
 
     /**
@@ -235,11 +148,7 @@ class PostController extends BaseAdminController
      */
     public function getEdit($id)
     {
-        $this->assets
-            ->addJavascripts([
-                'jquery-ckeditor'
-            ]);
-
+        $id = do_filter('blog.posts.before-edit.get', $id);
         /**
          * @var PostModelContract $item
          */
@@ -251,6 +160,11 @@ class PostController extends BaseAdminController
 
             return redirect()->back();
         }
+
+        $this->assets
+            ->addJavascripts([
+                'jquery-ckeditor'
+            ]);
 
         $this->dis['allCategories'] = get_categories_with_children();
         $this->dis['categories'] = $item->categories()->getRelatedIds()->toArray();
@@ -287,6 +201,8 @@ class PostController extends BaseAdminController
         if ((int)$id < 1) {
             $result = $this->createPost($data);
         } else {
+            $id = do_filter('blog.posts.before-edit.post', $id);
+
             $result = $this->updatePost($id, $data);
         }
 
@@ -348,6 +264,8 @@ class PostController extends BaseAdminController
      */
     public function deleteDelete($id)
     {
+        $id = do_filter('blog.posts.before-delete.delete', $id);
+
         $result = $this->repository->delete($id);
 
         do_action('blog.posts.after-delete.delete', $id, $result, $this);

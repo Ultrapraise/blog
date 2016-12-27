@@ -2,8 +2,10 @@
 
 use WebEd\Base\Core\Http\Controllers\BaseAdminController;
 use WebEd\Base\Core\Support\DataTable\DataTables;
+use WebEd\Plugins\Blog\Http\DataTables\CategoriesListDataTable;
 use WebEd\Plugins\Blog\Repositories\CategoryRepository;
 use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
+use Yajra\Datatables\Engines\BaseEngine;
 
 class CategoryController extends BaseAdminController
 {
@@ -25,103 +27,25 @@ class CategoryController extends BaseAdminController
         $this->getDashboardMenu('webed-blog-categories');
     }
 
-    public function getIndex()
+    public function getIndex(CategoriesListDataTable $categoriesListDataTable)
     {
-        $this->assets->addJavascripts('jquery-datatables');
-
         $this->setPageTitle('Categories', 'All available blog categories');
 
-        $this->dis['dataTableColumns'] = [
-            'headings' => [
-                ['name' => 'Title', 'width' => '35%'],
-                ['name' => 'Page template', 'width' => '15%'],
-                ['name' => 'Status', 'width' => '10%'],
-                ['name' => 'Order', 'width' => '5%'],
-                ['name' => 'Created at', 'width' => '10%'],
-                ['name' => 'Actions', 'width' => '15%'],
-            ],
-            'tableActions' => form()->select('', [
-                '' => 'Select' . '...',
-                'deleted' => 'Deleted',
-                'activated' => 'Activated',
-                'disabled' => 'Disabled',
-            ], null, [
-                'class' => 'table-group-action-input form-control input-inline input-small input-sm',
-                'data-placemenmt' => 'left'
-            ])
-        ];
-
-        $this->dis['dataTableHeadings'] = json_encode([
-            ['data' => 'id', 'name' => 'id', 'searchable' => false, 'orderable' => false],
-            ['data' => 'title', 'name' => 'title', 'searchable' => false, 'orderable' => false],
-            ['data' => 'page_template', 'name' => 'page_template', 'searchable' => false, 'orderable' => false],
-            ['data' => 'status', 'name' => 'status', 'searchable' => false, 'orderable' => false],
-            ['data' => 'order', 'name' => 'order', 'searchable' => false, 'orderable' => false],
-            ['data' => 'created_at', 'name' => 'created_at', 'searchable' => false, 'orderable' => false],
-            ['data' => 'actions', 'name' => 'actions', 'searchable' => false, 'orderable' => false],
-        ]);
+        $this->dis['dataTable'] = $categoriesListDataTable->run();
 
         return do_filter('blog.categories.index.get', $this)->viewAdmin('index-categories');
     }
 
     /**
      * Get data for DataTable
-     * @param DataTables $dataTable
+     * @param CategoriesListDataTable|BaseEngine $dataTable
      * @return \Illuminate\Http\JsonResponse
      */
-    public function postListing(DataTables $dataTable)
+    public function postListing(CategoriesListDataTable $categoriesListDataTable)
     {
-        $categories = collect(get_categories());
+        $data = $categoriesListDataTable->with($this->groupAction());
 
-        $data = $dataTable
-            ->of($categories)
-            ->with($this->groupAction())
-            ->editColumn('id', function ($item) {
-                return \Form::customCheckbox([['id[]', $item->id]]);
-            })
-            ->editColumn('title', function ($item) {
-                return $item->indent_text . $item->title;
-            })
-            ->editColumn('status', function ($item) {
-                return \Html::label($item->status, $item->status);
-            })
-            ->addColumn('actions', function ($item) {
-                /*Edit link*/
-                $activeLink = route('admin::blog.categories.update-status.post', ['id' => $item->id, 'status' => 'activated']);
-                $disableLink = route('admin::blog.categories.update-status.post', ['id' => $item->id, 'status' => 'disabled']);
-                $deleteLink = route('admin::blog.categories.delete.delete', ['id' => $item->id]);
-
-                /*Buttons*/
-                $editBtn = link_to(route('admin::blog.categories.edit.get', ['id' => $item->id]), 'Edit', ['class' => 'btn btn-sm btn-outline green']);
-                $activeBtn = ($item->status != 'activated') ? \Form::button('Active', [
-                    'title' => 'Active this item',
-                    'data-ajax' => $activeLink,
-                    'data-method' => 'POST',
-                    'data-toggle' => 'confirmation',
-                    'class' => 'btn btn-outline blue btn-sm ajax-link',
-                    'type' => 'button',
-                ]) : '';
-                $disableBtn = ($item->status != 'disabled') ? \Form::button('Disable', [
-                    'title' => 'Disable this item',
-                    'data-ajax' => $disableLink,
-                    'data-method' => 'POST',
-                    'data-toggle' => 'confirmation',
-                    'class' => 'btn btn-outline yellow-lemon btn-sm ajax-link',
-                    'type' => 'button',
-                ]) : '';
-                $deleteBtn = \Form::button('Delete', [
-                    'title' => 'Delete this item',
-                    'data-ajax' => $deleteLink,
-                    'data-method' => 'DELETE',
-                    'data-toggle' => 'confirmation',
-                    'class' => 'btn btn-outline red-sunglo btn-sm ajax-link',
-                    'type' => 'button',
-                ]);
-
-                return $editBtn . $activeBtn . $disableBtn . $deleteBtn;
-            });
-
-        return do_filter('datatables.pages.index.post', $data, $this)
+        return do_filter('datatables.blog.categories.index.post', $data, $this)
             ->make(true);
     }
 
@@ -229,10 +153,7 @@ class CategoryController extends BaseAdminController
      */
     public function getEdit($id)
     {
-        $this->assets
-            ->addJavascripts([
-                'jquery-ckeditor'
-            ]);
+        $id = do_filter('blog.categories.before-edit.get', $id);
 
         $item = $this->repository->find($id);
         if (!$item) {
@@ -243,11 +164,15 @@ class CategoryController extends BaseAdminController
             return redirect()->back();
         }
 
+        $this->assets
+            ->addJavascripts([
+                'jquery-ckeditor'
+            ]);
+
         $categories = get_categories();
 
         $selectArr = ['' => 'Select...'];
-        $childCategories = [$id];
-        $childCategories = $this->repository->getAllRelatedChildrenIds($item, $childCategories);
+        $childCategories = array_merge($this->repository->getAllRelatedChildrenIds($item), [$id]);
         foreach ($categories as $category) {
             if (!in_array($category->id, $childCategories)) {
                 $selectArr[$category->id] = $category->indent_text . $category->title;
@@ -289,6 +214,8 @@ class CategoryController extends BaseAdminController
         if ((int)$id < 1) {
             $result = $this->createPost($data);
         } else {
+            $id = do_filter('blog.categories.before-edit.post', $id);
+
             $result = $this->updatePost($id, $data);
         }
 
@@ -349,6 +276,8 @@ class CategoryController extends BaseAdminController
      */
     public function deleteDelete($id)
     {
+        $id = do_filter('blog.categories.before-delete.delete', $id);
+
         $result = $this->repository->delete($id);
 
         do_action('blog.categories.after-delete.delete', $id, $result, $this);

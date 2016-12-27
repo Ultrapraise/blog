@@ -5,7 +5,7 @@ use WebEd\Base\Core\Http\Controllers\BaseApiController;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\PostRepository;
 
-class PostController extends BaseApiController
+class PostApiController extends BaseApiController
 {
     protected $module = 'webed-blog';
 
@@ -26,9 +26,9 @@ class PostController extends BaseApiController
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function getIndex()
     {
-        $result = $this->repository->paginate(10)
+        $result = $this->repository->paginate(2)
             ->setCurrentPaged($this->request->get('page', 1))
             ->with('author')
             ->with('categories')
@@ -43,7 +43,7 @@ class PostController extends BaseApiController
      */
     public function create()
     {
-        //
+
     }
 
     /**
@@ -54,7 +54,7 @@ class PostController extends BaseApiController
      */
     public function store(Request $request)
     {
-        //
+
     }
 
     /**
@@ -65,7 +65,8 @@ class PostController extends BaseApiController
      */
     public function show($id)
     {
-        //
+        $result = $this->repository->find($id);
+        return response()->json($result);
     }
 
     /**
@@ -76,7 +77,8 @@ class PostController extends BaseApiController
      */
     public function edit($id)
     {
-        //
+        $result = $this->repository->find($id);
+        return response()->json($result);
     }
 
     /**
@@ -88,7 +90,8 @@ class PostController extends BaseApiController
      */
     public function update(Request $request, $id)
     {
-        //
+        $result = $this->repository->find($id);
+        return response()->json($result);
     }
 
     /**
@@ -99,6 +102,7 @@ class PostController extends BaseApiController
      */
     public function destroy($id)
     {
-        //
+        $result = $this->repository->find($id);
+        return response()->json($result);
     }
 }
