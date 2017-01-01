@@ -21,6 +21,7 @@ class CategoriesListDataTable extends AbstractDataTables
         $this->setAjaxUrl(route('admin::blog.categories.index.post'), 'POST');
 
         $this
+            ->addHeading('id', 'ID', '5%')
             ->addHeading('title', 'Title', '25%')
             ->addHeading('page_template', 'Page template', '15%')
             ->addHeading('status', 'Status', '10%')
@@ -29,7 +30,15 @@ class CategoriesListDataTable extends AbstractDataTables
             ->addHeading('actions', 'Actions', '20%');
 
         $this
-            ->addFilter(1, form()->text('title', '', [
+            ->addFilter(1, form()->text('id', '', [
+                'class' => 'form-control form-filter input-sm',
+                'placeholder' => '...'
+            ]))
+            ->addFilter(2, form()->text('title', '', [
+                'class' => 'form-control form-filter input-sm',
+                'placeholder' => 'Search...'
+            ]))
+            ->addFilter(3, form()->select('page_template', get_templates('Category'), null, [
                 'class' => 'form-control form-filter input-sm',
                 'placeholder' => 'Search...'
             ]));
@@ -43,8 +52,9 @@ class CategoriesListDataTable extends AbstractDataTables
 
         $this->setColumns([
             ['data' => 'id', 'name' => 'id', 'searchable' => false, 'orderable' => false],
+            ['data' => 'viewID', 'name' => 'id',],
             ['data' => 'title', 'name' => 'title', 'searchable' => false, 'orderable' => false],
-            ['data' => 'page_template', 'name' => 'page_template', 'searchable' => false, 'orderable' => false],
+            ['data' => 'page_template', 'name' => 'page_template',],
             ['data' => 'status', 'name' => 'status', 'searchable' => false, 'orderable' => false],
             ['data' => 'order', 'name' => 'order', 'searchable' => false, 'orderable' => false],
             ['data' => 'created_at', 'name' => 'created_at', 'searchable' => false, 'orderable' => false],
@@ -61,13 +71,16 @@ class CategoriesListDataTable extends AbstractDataTables
     {
         $this->fetch = datatable()->of($this->repository)
             ->editColumn('id', function ($item) {
-                return \Form::customCheckbox([['id[]', $item->id]]);
+                return form()->customCheckbox([['id[]', $item->id]]);
+            })
+            ->addColumn('viewID', function ($item) {
+                return $item->id;
             })
             ->editColumn('title', function ($item) {
                 return $item->indent_text . $item->title;
             })
             ->editColumn('status', function ($item) {
-                return \Html::label($item->status, $item->status);
+                return html()->label($item->status, $item->status);
             })
             ->addColumn('actions', function ($item) {
                 /*Edit link*/
@@ -77,7 +90,7 @@ class CategoriesListDataTable extends AbstractDataTables
 
                 /*Buttons*/
                 $editBtn = link_to(route('admin::blog.categories.edit.get', ['id' => $item->id]), 'Edit', ['class' => 'btn btn-sm btn-outline green']);
-                $activeBtn = ($item->status != 'activated') ? \Form::button('Active', [
+                $activeBtn = ($item->status != 'activated') ? form()->button('Active', [
                     'title' => 'Active this item',
                     'data-ajax' => $activeLink,
                     'data-method' => 'POST',
@@ -85,7 +98,7 @@ class CategoriesListDataTable extends AbstractDataTables
                     'class' => 'btn btn-outline blue btn-sm ajax-link',
                     'type' => 'button',
                 ]) : '';
-                $disableBtn = ($item->status != 'disabled') ? \Form::button('Disable', [
+                $disableBtn = ($item->status != 'disabled') ? form()->button('Disable', [
                     'title' => 'Disable this item',
                     'data-ajax' => $disableLink,
                     'data-method' => 'POST',
@@ -93,7 +106,7 @@ class CategoriesListDataTable extends AbstractDataTables
                     'class' => 'btn btn-outline yellow-lemon btn-sm ajax-link',
                     'type' => 'button',
                 ]) : '';
-                $deleteBtn = \Form::button('Delete', [
+                $deleteBtn = form()->button('Delete', [
                     'title' => 'Delete this item',
                     'data-ajax' => $deleteLink,
                     'data-method' => 'DELETE',

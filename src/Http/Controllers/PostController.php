@@ -2,6 +2,8 @@
 
 use WebEd\Base\Core\Http\Controllers\BaseAdminController;
 use WebEd\Plugins\Blog\Http\DataTables\PostsListDataTable;
+use WebEd\Plugins\Blog\Http\Requests\CreatePostRequest;
+use WebEd\Plugins\Blog\Http\Requests\UpdatePostRequest;
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\PostRepository;
@@ -33,7 +35,7 @@ class PostController extends BaseAdminController
 
         $this->dis['dataTable'] = $postsListDataTable->run();
 
-        return do_filter('blog.posts.index.get', $this)->viewAdmin('index-posts');
+        return do_filter('blog.posts.index.get', $this)->viewAdmin('posts.index');
     }
 
     /**
@@ -56,7 +58,7 @@ class PostController extends BaseAdminController
     {
         $data = [];
         if ($this->request->get('customActionType', null) === 'group_action') {
-            if(!$this->userRepository->hasPermission($this->loggedInUser, 'edit-posts')) {
+            if (!$this->userRepository->hasPermission($this->loggedInUser, 'edit-posts')) {
                 return [
                     'customActionMessage' => 'You do not have permission',
                     'customActionStatus' => 'danger',
@@ -68,7 +70,7 @@ class PostController extends BaseAdminController
 
             switch ($actionValue) {
                 case 'deleted':
-                    if(!$this->userRepository->hasPermission($this->loggedInUser, 'delete-posts')) {
+                    if (!$this->userRepository->hasPermission($this->loggedInUser, 'delete-posts')) {
                         return [
                             'customActionMessage' => 'You do not have permission',
                             'customActionStatus' => 'danger',
@@ -139,7 +141,34 @@ class PostController extends BaseAdminController
             }
         }
 
-        return do_filter('blog.posts.create.get', $this)->viewAdmin('edit-posts');
+        return do_filter('blog.posts.create.get', $this)->viewAdmin('posts.create');
+    }
+
+    public function postCreate(CreatePostRequest $request)
+    {
+        $data = $this->parseInputData();
+
+        $data['created_by'] = $this->loggedInUser->id;
+
+        $result = $this->repository->createPost($data);
+
+        do_action('blog.posts.after-create.post', null, $result, $this);
+
+        $msgType = $result['error'] ? 'danger' : 'success';
+
+        $this->flashMessagesHelper
+            ->addMessages($result['messages'], $msgType)
+            ->showMessagesOnSession();
+
+        if ($result['error']) {
+            return redirect()->back()->withInput();
+        }
+
+        if ($request->has('_continue_edit')) {
+            return redirect()->to(route('admin::blog.posts.edit.get', ['id' => $result['data']->id]));
+        }
+
+        return redirect()->to(route('admin::blog.posts.index.get'));
     }
 
     /**
@@ -175,36 +204,25 @@ class PostController extends BaseAdminController
         $this->dis['object'] = $item;
         $this->dis['currentId'] = $id;
 
-        return do_filter('blog.posts.edit.get', $this, $id)->viewAdmin('edit-posts');
+        return do_filter('blog.posts.edit.get', $this, $id)->viewAdmin('posts.edit');
     }
 
-    /**
-     * @param $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function postEdit($id = null)
+    public function postEdit(UpdatePostRequest $request, $id)
     {
-        $data = [
-            'page_template' => $this->request->get('page_template', null),
-            'status' => $this->request->get('status'),
-            'title' => $this->request->get('title'),
-            'slug' => ($this->request->get('slug') ? str_slug($this->request->get('slug')) : str_slug($this->request->get('title'))),
-            'keywords' => $this->request->get('keywords'),
-            'description' => $this->request->get('description'),
-            'content' => $this->request->get('content'),
-            'thumbnail' => $this->request->get('thumbnail'),
-            'order' => $this->request->get('order'),
-            'updated_by' => $this->loggedInUser->id,
-            'categories' => $this->request->get('categories', []),
-        ];
+        $data = $this->parseInputData();
 
-        if ((int)$id < 1) {
-            $result = $this->createPost($data);
-        } else {
-            $id = do_filter('blog.posts.before-edit.post', $id);
+        $id = do_filter('blog.posts.before-edit.post', $id);
 
-            $result = $this->updatePost($id, $data);
+        $item = $this->repository->find($id);
+        if (!$item) {
+            $this->flashMessagesHelper
+                ->addMessages('This post not exists', 'danger')
+                ->showMessagesOnSession();
+
+            return redirect()->back();
         }
+
+        $result = $this->repository->updatePost($item, $data);
 
         do_action('blog.posts.after-edit.post', $id, $result, $this);
 
@@ -214,48 +232,15 @@ class PostController extends BaseAdminController
             ->addMessages($result['messages'], $msgType)
             ->showMessagesOnSession();
 
-        if($result['error']) {
-            if((int)$id < 1) {
-                return redirect()->back()->withInput();
-            }
+        if ($result['error']) {
             return redirect()->back();
         }
 
         if ($this->request->has('_continue_edit')) {
-            if ((int)$id < 1) {
-                if (!$result['error']) {
-                    return redirect()->to(route('admin::blog.posts.edit.get', ['id' => $result['data']->id]));
-                }
-            }
             return redirect()->back();
         }
 
         return redirect()->to(route('admin::blog.posts.index.get'));
-    }
-
-    /**
-     * @param array $data
-     * @return array
-     */
-    private function createPost(array $data)
-    {
-        if(!$this->userRepository->hasPermission($this->loggedInUser, 'create-posts')) {
-            return redirect()->to(route('admin::error', ['code' => 403]));
-        }
-
-        $data['created_by'] = $this->loggedInUser->id;
-
-        return $this->repository->createPost($data);
-    }
-
-    /**
-     * @param $id
-     * @param array $data
-     * @return array
-     */
-    private function updatePost($id, array $data)
-    {
-        return $this->repository->updatePost($id, $data);
     }
 
     /**
@@ -271,5 +256,23 @@ class PostController extends BaseAdminController
         do_action('blog.posts.after-delete.delete', $id, $result, $this);
 
         return response()->json($result, $result['response_code']);
+    }
+
+    protected function parseInputData()
+    {
+        $data = [
+            'page_template' => $this->request->get('page_template', null),
+            'status' => $this->request->get('status'),
+            'title' => $this->request->get('title'),
+            'slug' => ($this->request->get('slug') ? str_slug($this->request->get('slug')) : str_slug($this->request->get('title'))),
+            'keywords' => $this->request->get('keywords'),
+            'description' => $this->request->get('description'),
+            'content' => $this->request->get('content'),
+            'thumbnail' => $this->request->get('thumbnail'),
+            'order' => $this->request->get('order'),
+            'updated_by' => $this->loggedInUser->id,
+            'categories' => $this->request->get('categories') ?: [],
+        ];
+        return $data;
     }
 }

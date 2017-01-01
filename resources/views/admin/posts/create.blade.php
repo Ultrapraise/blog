@@ -12,35 +12,12 @@
     <script type="text/javascript">
         $(document).ready(function () {
             WebEd.ckeditor($('.js-ckeditor'));
-
-            $('.js-validate-form').validate({
-                errorElement: 'span', //default input error message container
-                errorClass: 'help-block help-block-error', // default input error message class
-                focusInvalid: false, // do not focus the last invalid input
-                ignore: "",  // validate all fields including form hidden input
-                messages: {},
-                rules: {
-                    title: {
-                        minlength: 3,
-                        maxlength: 255,
-                        required: true
-                    },
-                    slug: {
-                        required: true,
-                        minlength: 3,
-                        maxlength: 255
-                    },
-                    description: {
-                        maxlength: 1000
-                    }
-                },
-            });
         });
     </script>
 @endsection
 
 @section('content')
-    {!! Form::open(['class' => 'js-validate-form', 'url' => route('admin::blog.posts.edit.post', ['id' => $currentId])]) !!}
+    {!! Form::open(['class' => 'js-validate-form', 'url' => route('admin::blog.posts.create.post')]) !!}
     <div class="layout-2columns sidebar-right">
         <div class="column main">
             <div class="box box-primary">
@@ -72,14 +49,6 @@
                                class="form-control"
                                value="{{ $object->slug or '' }}" autocomplete="off">
                     </div>
-                    @if($object->slug)
-                        <div class="form-group">
-                            <label class="control-label">
-                                <b>Visit page:</b>
-                            </label>
-                            <a href="{{ route('front.web.resolve-blog.get', ['slug' => $object->slug]) }}" target="_blank">{{ route('front.web.resolve-blog.get', ['slug' => $object->slug]) }}</a>
-                        </div>
-                    @endif
                     <div class="form-group">
                         <label class="control-label">
                             <b>Content</b>
@@ -117,10 +86,10 @@
                     </div>
                 </div>
             </div>
-            @php do_action('meta_boxes', 'main', 'blog.post', $object) @endphp
+            @php do_action('meta_boxes', 'main', 'blog.posts.create', $object) @endphp
         </div>
         <div class="column right">
-            @php do_action('meta_boxes', 'top-sidebar', 'blog.post', $object) @endphp
+            @php do_action('meta_boxes', 'top-sidebar', 'blog.posts.create', $object) @endphp
             @include('webed-core::admin._widgets.page-templates', [
                 'name' => 'page_template',
                 'templates' => get_templates('Post'),
@@ -158,7 +127,7 @@
                     </div>
                 </div>
             </div>
-            @php do_action('meta_boxes', 'bottom-sidebar', 'blog.post', $object) @endphp
+            @php do_action('meta_boxes', 'bottom-sidebar', 'blog.posts.create', $object) @endphp
             <div class="box box-primary">
                 <div class="box-header with-border">
                     <h3 class="box-title">Publish content</h3>

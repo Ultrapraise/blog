@@ -24,6 +24,7 @@ class PostsListDataTable extends AbstractDataTables
         $this->setAjaxUrl(route('admin::blog.posts.index.post'), 'POST');
 
         $this
+            ->addHeading('id', 'ID', '5%')
             ->addHeading('title', 'Title', '25%')
             ->addHeading('page_template', 'Page template', '15%')
             ->addHeading('status', 'Status', '10%')
@@ -32,15 +33,19 @@ class PostsListDataTable extends AbstractDataTables
             ->addHeading('actions', 'Actions', '20%');
 
         $this
-            ->addFilter(1, form()->text('title', '', [
+            ->addFilter(1, form()->text('id', '', [
+                'class' => 'form-control form-filter input-sm',
+                'placeholder' => '...'
+            ]))
+            ->addFilter(2, form()->text('title', '', [
                 'class' => 'form-control form-filter input-sm',
                 'placeholder' => 'Search...'
             ]))
-            ->addFilter(2, form()->text('page_template', '', [
+            ->addFilter(3, form()->text('page_template', '', [
                 'class' => 'form-control form-filter input-sm',
                 'placeholder' => 'Search...'
             ]))
-            ->addFilter(3, form()->select('status', [
+            ->addFilter(4, form()->select('status', [
                 '' => '',
                 'activated' => 'Activated',
                 'disabled' => 'Disabled',
@@ -55,6 +60,7 @@ class PostsListDataTable extends AbstractDataTables
 
         $this->setColumns([
             ['data' => 'id', 'name' => 'id', 'searchable' => false, 'orderable' => false],
+            ['data' => 'viewID', 'name' => 'id'],
             ['data' => 'title', 'name' => 'title'],
             ['data' => 'page_template', 'name' => 'page_template'],
             ['data' => 'status', 'name' => 'status'],
@@ -72,6 +78,9 @@ class PostsListDataTable extends AbstractDataTables
     protected function fetch()
     {
         $this->fetch = datatable()->of($this->repository)
+            ->addColumn('viewID', function ($item) {
+                return $item->id;
+            })
             ->editColumn('id', function ($item) {
                 return form()->customCheckbox([['id[]', $item->id]]);
             })

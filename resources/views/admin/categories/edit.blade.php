@@ -12,29 +12,6 @@
     <script type="text/javascript">
         $(document).ready(function () {
             WebEd.ckeditor($('.js-ckeditor'));
-
-            $('.js-validate-form').validate({
-                errorElement: 'span', //default input error message container
-                errorClass: 'help-block help-block-error', // default input error message class
-                focusInvalid: false, // do not focus the last invalid input
-                ignore: "",  // validate all fields including form hidden input
-                messages: {},
-                rules: {
-                    title: {
-                        minlength: 3,
-                        maxlength: 255,
-                        required: true
-                    },
-                    slug: {
-                        required: true,
-                        minlength: 3,
-                        maxlength: 255
-                    },
-                    description: {
-                        maxlength: 1000
-                    }
-                },
-            });
         });
     </script>
 @endsection
@@ -117,10 +94,10 @@
                     </div>
                 </div>
             </div>
-            @php do_action('meta_boxes', 'main', 'blog.category', $object) @endphp
+            @php do_action('meta_boxes', 'main', 'blog.categories.edit', $object) @endphp
         </div>
         <div class="column right">
-            @php do_action('meta_boxes', 'top-sidebar', 'blog.category', $object) @endphp
+            @php do_action('meta_boxes', 'top-sidebar', 'blog.categories.edit', $object) @endphp
             @include('webed-core::admin._widgets.page-templates', [
                 'name' => 'page_template',
                 'templates' => get_templates('Category'),
@@ -170,7 +147,7 @@
                     </div>
                 </div>
             </div>
-            @php do_action('meta_boxes', 'bottom-sidebar', 'blog.category', $object) @endphp
+            @php do_action('meta_boxes', 'bottom-sidebar', 'blog.categories.edit', $object) @endphp
             <div class="box box-primary">
                 <div class="box-header with-border">
                     <h3 class="box-title">Publish content</h3>

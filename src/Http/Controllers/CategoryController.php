@@ -3,6 +3,8 @@
 use WebEd\Base\Core\Http\Controllers\BaseAdminController;
 use WebEd\Base\Core\Support\DataTable\DataTables;
 use WebEd\Plugins\Blog\Http\DataTables\CategoriesListDataTable;
+use WebEd\Plugins\Blog\Http\Requests\CreateCategoryRequest;
+use WebEd\Plugins\Blog\Http\Requests\UpdateCategoryRequest;
 use WebEd\Plugins\Blog\Repositories\CategoryRepository;
 use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
 use Yajra\Datatables\Engines\BaseEngine;
@@ -10,6 +12,11 @@ use Yajra\Datatables\Engines\BaseEngine;
 class CategoryController extends BaseAdminController
 {
     protected $module = 'webed-blog';
+
+    /**
+     * @var CategoryRepository|CategoryRepositoryContract
+     */
+    protected $repository;
 
     /**
      * CategoryController constructor.
@@ -33,7 +40,7 @@ class CategoryController extends BaseAdminController
 
         $this->dis['dataTable'] = $categoriesListDataTable->run();
 
-        return do_filter('blog.categories.index.get', $this)->viewAdmin('index-categories');
+        return do_filter('blog.categories.index.get', $this)->viewAdmin('categories.index');
     }
 
     /**
@@ -108,7 +115,7 @@ class CategoryController extends BaseAdminController
         $data = [
             'status' => $status
         ];
-        $result = $this->repository->updatePost($id, $data);
+        $result = $this->repository->updateCategory($id, $data);
         return response()->json($result, $result['response_code']);
     }
 
@@ -144,13 +151,40 @@ class CategoryController extends BaseAdminController
             }
         }
 
-        return do_filter('blog.categories.create.get', $this)->viewAdmin('edit-categories');
+        return do_filter('blog.categories.create.get', $this)->viewAdmin('categories.create');
     }
 
-    /**
-     * @param $id
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\RedirectResponse|\Illuminate\View\View
-     */
+    public function postCreate(CreateCategoryRequest $request)
+    {
+        $parentId = $request->get('parent_id') ?: null;
+        $data = $this->parseInputData();
+        $data['parent_id'] = $parentId;
+
+        $data['created_by'] = $this->loggedInUser->id;
+
+        $result = $this->repository->createCategory($data);
+
+        do_action('blog.categories.after-create.post', null, $result, $this);
+
+        $msgType = $result['error'] ? 'danger' : 'success';
+
+        $this->flashMessagesHelper
+            ->addMessages($result['messages'], $msgType)
+            ->showMessagesOnSession();
+
+        if ($result['error']) {
+            return redirect()->back()->withInput();
+        }
+
+        if ($request->has('_continue_edit')) {
+            if (!$result['error']) {
+                return redirect()->to(route('admin::blog.categories.edit.get', ['id' => $result['data']->id]));
+            }
+        }
+
+        return redirect()->to(route('admin::blog.categories.index.get'));
+    }
+
     public function getEdit($id)
     {
         $id = do_filter('blog.categories.before-edit.get', $id);
@@ -186,38 +220,18 @@ class CategoryController extends BaseAdminController
         $this->dis['object'] = $item;
         $this->dis['currentId'] = $id;
 
-        return do_filter('blog.categories.edit.get', $this, $id)->viewAdmin('edit-categories');
+        return do_filter('blog.categories.edit.get', $this, $id)->viewAdmin('categories.edit');
     }
 
-    /**
-     * @param $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function postEdit($id = null)
+    public function postEdit(UpdateCategoryRequest $request, $id)
     {
-        $parentId = (int)$this->request->get('parent_id') === (int)$id ? null : $this->request->get('parent_id') ?: null;
+        $id = do_filter('blog.categories.before-edit.post', $id);
 
-        $data = [
-            'page_template' => $this->request->get('page_template', null),
-            'status' => $this->request->get('status'),
-            'title' => $this->request->get('title'),
-            'slug' => ($this->request->get('slug') ? str_slug($this->request->get('slug')) : str_slug($this->request->get('title'))),
-            'keywords' => $this->request->get('keywords'),
-            'description' => $this->request->get('description'),
-            'content' => $this->request->get('content'),
-            'thumbnail' => $this->request->get('thumbnail'),
-            'order' => $this->request->get('order'),
-            'updated_by' => $this->loggedInUser->id,
-            'parent_id' => $parentId,
-        ];
+        $parentId = (int)$request->get('parent_id') === (int)$id ? null : $request->get('parent_id') ?: null;
+        $data = $this->parseInputData();
+        $data['parent_id'] = $parentId;
 
-        if ((int)$id < 1) {
-            $result = $this->createPost($data);
-        } else {
-            $id = do_filter('blog.categories.before-edit.post', $id);
-
-            $result = $this->updatePost($id, $data);
-        }
+        $result = $this->updatePost($id, $data);
 
         do_action('blog.categories.after-edit.post', $id, $result, $this);
 
@@ -233,7 +247,7 @@ class CategoryController extends BaseAdminController
             }
         }
 
-        if ($this->request->has('_continue_edit')) {
+        if ($request->has('_continue_edit')) {
             if (!$id) {
                 if (!$result['error']) {
                     return redirect()->to(route('admin::blog.categories.edit.get', ['id' => $result['data']->id]));
@@ -243,21 +257,6 @@ class CategoryController extends BaseAdminController
         }
 
         return redirect()->to(route('admin::blog.categories.index.get'));
-    }
-
-    /**
-     * @param array $data
-     * @return array
-     */
-    private function createPost(array $data)
-    {
-        if (!$this->userRepository->hasPermission($this->loggedInUser, 'create-categories')) {
-            return redirect()->to(route('admin::error', ['code' => 403]));
-        }
-
-        $data['created_by'] = $this->loggedInUser->id;
-
-        return $this->repository->createCategory($data);
     }
 
     /**
@@ -283,5 +282,22 @@ class CategoryController extends BaseAdminController
         do_action('blog.categories.after-delete.delete', $id, $result, $this);
 
         return response()->json($result, $result['response_code']);
+    }
+
+    protected function parseInputData()
+    {
+        $data = [
+            'page_template' => $this->request->get('page_template', null),
+            'status' => $this->request->get('status'),
+            'title' => $this->request->get('title'),
+            'slug' => ($this->request->get('slug') ? str_slug($this->request->get('slug')) : str_slug($this->request->get('title'))),
+            'keywords' => $this->request->get('keywords'),
+            'description' => $this->request->get('description'),
+            'content' => $this->request->get('content'),
+            'thumbnail' => $this->request->get('thumbnail'),
+            'order' => $this->request->get('order'),
+            'updated_by' => $this->loggedInUser->id,
+        ];
+        return $data;
     }
 }

@@ -1,6 +1,6 @@
 <?php namespace WebEd\Plugins\Blog\Models;
 
-use WebEd\Base\Users\Models\EloquentUser;
+use WebEd\Base\Users\Models\User;
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
 use WebEd\Base\Core\Models\EloquentBase as BaseModel;
 
@@ -24,7 +24,7 @@ class Post extends BaseModel implements PostModelContract
      */
     public function author()
     {
-        return $this->belongsTo(EloquentUser::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**
@@ -32,7 +32,7 @@ class Post extends BaseModel implements PostModelContract
      */
     public function modifier()
     {
-        return $this->belongsTo(EloquentUser::class, 'updated_by');
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     /**
