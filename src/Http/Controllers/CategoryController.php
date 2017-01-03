@@ -187,8 +187,6 @@ class CategoryController extends BaseAdminController
 
     public function getEdit($id)
     {
-        $id = do_filter('blog.categories.before-edit.get', $id);
-
         $item = $this->repository->find($id);
         if (!$item) {
             $this->flashMessagesHelper
@@ -197,6 +195,8 @@ class CategoryController extends BaseAdminController
 
             return redirect()->back();
         }
+
+        $item = do_filter('blog.categories.before-edit.get', $item);
 
         $this->assets
             ->addJavascripts([

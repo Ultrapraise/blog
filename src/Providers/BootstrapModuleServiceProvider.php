@@ -39,23 +39,24 @@ class BootstrapModuleServiceProvider extends ServiceProvider
          */
         \DashboardMenu::registerItem([
             'id' => 'webed-blog-posts',
-            'piority' => 2,
+            'priority' => 2,
             'parent_id' => null,
             'heading' => 'Blog',
             'title' => 'Posts',
             'font_icon' => 'icon-book-open',
             'link' => route('admin::blog.posts.index.get'),
             'css_class' => null,
-        ])
-            ->registerItem([
-                'id' => 'webed-blog-categories',
-                'piority' => 2.1,
-                'parent_id' => null,
-                'title' => 'Categories',
-                'font_icon' => 'fa fa-sitemap',
-                'link' => route('admin::blog.categories.index.get'),
-                'css_class' => null,
-            ]);
+            'permissions' => ['view-posts'],
+        ])->registerItem([
+            'id' => 'webed-blog-categories',
+            'priority' => 2.1,
+            'parent_id' => null,
+            'title' => 'Categories',
+            'font_icon' => 'fa fa-sitemap',
+            'link' => route('admin::blog.categories.index.get'),
+            'css_class' => null,
+            'permissions' => ['view-categories'],
+        ]);
 
         /**
          * Register menu widget

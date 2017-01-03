@@ -177,10 +177,6 @@ class PostController extends BaseAdminController
      */
     public function getEdit($id)
     {
-        $id = do_filter('blog.posts.before-edit.get', $id);
-        /**
-         * @var PostModelContract $item
-         */
         $item = $this->repository->find($id);
         if (!$item) {
             $this->flashMessagesHelper
@@ -189,6 +185,8 @@ class PostController extends BaseAdminController
 
             return redirect()->back();
         }
+
+        $item = do_filter('blog.posts.before-edit.get', $item);
 
         $this->assets
             ->addJavascripts([
