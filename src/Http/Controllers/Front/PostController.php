@@ -15,7 +15,12 @@ class PostController extends BaseFrontController
     {
         parent::__construct();
 
-        $this->themeController = themes_management()->getThemeController('Post');
+        $this->themeController = themes_management()->getThemeController('Blog\Post');
+
+        if (!$this->themeController) {
+            echo '<h2>You need to active a theme</h2>';
+            die();
+        }
 
         $this->repository = $repository;
     }
@@ -37,32 +42,6 @@ class PostController extends BaseFrontController
 
         $this->dis['author'] = $item->author;
 
-        if($this->themeController) {
-            return $this->themeController->handle($item, $this->dis);
-        }
-
-        $this->getMenu('category', $this->dis['categoryIds']);
-
-        $happyMethod = '_template_' . studly_case($item->page_template);
-        if(method_exists($this, $happyMethod)) {
-            return $this->$happyMethod($item);
-        }
-        return $this->defaultTemplate($item);
-    }
-
-    /**
-     * @param Post $item
-     * @return mixed
-     */
-    protected function defaultTemplate(PostModelContract $item)
-    {
-        $this->dis['relatedPosts'] = $this->repository
-            ->whereBelongsToCategories($this->dis['categoryIds'])
-            ->where('posts.id', 'NOT_IN', $item->id)
-            ->orderByRandom()
-            ->take(4)
-            ->get();
-
-        return $this->view('front.post-templates.default');
+        return $this->themeController->handle($item, $this->dis);
     }
 }

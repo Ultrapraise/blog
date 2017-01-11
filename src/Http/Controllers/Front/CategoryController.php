@@ -25,7 +25,12 @@ class CategoryController extends BaseFrontController
     {
         parent::__construct();
 
-        $this->themeController = themes_management()->getThemeController('Category');
+        $this->themeController = themes_management()->getThemeController('Blog\Category');
+
+        if (!$this->themeController) {
+            echo '<h2>You need to active a theme</h2>';
+            die();
+        }
 
         $this->repository = $repository;
         $this->postRepository = $postRepository;
@@ -50,35 +55,6 @@ class CategoryController extends BaseFrontController
 
         $this->dis['posts'] = $posts;
 
-        if($this->themeController) {
-            return $this->themeController->handle($item, $this->dis);
-        }
-
-        $this->getMenu('category', $item->id);
-
-        $happyMethod = '_template_' . studly_case($item->page_template);
-
-        if(method_exists($this, $happyMethod)) {
-            return $this->$happyMethod($item);
-        }
-        return $this->defaultTemplate($item);
-    }
-
-    /**
-     * @param Category $item
-     * @return mixed
-     */
-    protected function defaultTemplate(CategoryModelContract $item)
-    {
-        return $this->view('front.category-templates.default');
-    }
-
-    /**
-     * @param Category $item
-     * @return mixed
-     */
-    protected function _template_Blog(CategoryModelContract $item)
-    {
-        return $this->view('front.category-templates.blog');
+        return $this->themeController->handle($item, $this->dis);
     }
 }

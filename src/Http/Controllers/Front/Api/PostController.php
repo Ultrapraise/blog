@@ -5,7 +5,7 @@ use WebEd\Base\Core\Http\Controllers\BaseApiController;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\PostRepository;
 
-class PostApiController extends BaseApiController
+class PostController extends BaseApiController
 {
     protected $module = 'webed-blog';
 

@@ -108,9 +108,10 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
      */
     public function whereBelongsToCategories(array $categoryIds)
     {
-        return $this->leftJoin('posts_categories', 'posts.id', '=', 'posts_categories.post_id')
-            ->leftJoin('categories', 'categories.id', '=', 'posts_categories.category_id')
+        return $this->join('posts_categories', 'posts.id', '=', 'posts_categories.post_id')
+            ->join('categories', 'categories.id', '=', 'posts_categories.category_id')
             ->where('categories.id', 'IN', $categoryIds)
+            ->distinct()
             ->select('posts.*');
     }
 }

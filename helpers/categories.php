@@ -16,7 +16,7 @@ if (!function_exists('get_categories')) {
             ->orderBy('created_at', 'DESC')
             ->get();
 
-        $categories = sort_categories($categories);
+        $categories = sort_item_with_children($categories);
 
         foreach ($categories as $category) {
             $indentText = '';
@@ -28,37 +28,6 @@ if (!function_exists('get_categories')) {
         }
 
         return $categories;
-    }
-}
-
-if (!function_exists('sort_categories')) {
-    /**
-     * Sort parents before children
-     * @param \Illuminate\Support\Collection|array $categories
-     * @param array $result
-     * @param int $parent
-     * @param int $depth
-     * @return array
-     */
-    function sort_categories($categories, array &$result = [], $parent = null, $depth = 0)
-    {
-        if ($categories instanceof \Illuminate\Support\Collection) {
-            $categoriesArr = [];
-            foreach ($categories as $category) {
-                $categoriesArr[] = $category;
-            }
-            $categories = $categoriesArr;
-        }
-
-        foreach ($categories as $key => $object) {
-            if ((int)$object->parent_id == (int)$parent) {
-                array_push($result, $object);
-                $object->depth = $depth;
-                unset($categories[$key]);
-                sort_categories($categories, $result, $object->id, $depth + 1);
-            }
-        }
-        return $result;
     }
 }
 
