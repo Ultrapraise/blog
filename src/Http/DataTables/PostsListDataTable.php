@@ -2,6 +2,7 @@
 
 use WebEd\Base\Core\Http\DataTables\AbstractDataTables;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
+use WebEd\Plugins\Blog\Repositories\PostRepository;
 
 class PostsListDataTable extends AbstractDataTables
 {
@@ -11,7 +12,7 @@ class PostsListDataTable extends AbstractDataTables
     {
         $this->repository = $repository;
 
-        $this->repository->select('id', 'created_at', 'title', 'page_template', 'status', 'order');
+        $this->repository->select('id', 'created_at', 'title', 'page_template', 'status', 'order', 'is_featured');
 
         parent::__construct();
     }
@@ -49,6 +50,7 @@ class PostsListDataTable extends AbstractDataTables
                 '' => '',
                 'activated' => 'Activated',
                 'disabled' => 'Disabled',
+                'is_featured' => 'Featured'
             ], null, ['class' => 'form-control form-filter input-sm']));
 
         $this->withGroupActions([
@@ -78,6 +80,16 @@ class PostsListDataTable extends AbstractDataTables
     protected function fetch()
     {
         $this->fetch = datatable()->of($this->repository)
+            ->filterColumn('status', function ($query, $keyword) {
+                /**
+                 * @var PostRepository $query
+                 */
+                if ($keyword === 'is_featured') {
+                    return $query->where('is_featured', '=', $keyword);
+                } else {
+                    return $query->where('status', '=', $keyword);
+                }
+            })
             ->addColumn('viewID', function ($item) {
                 return $item->id;
             })
@@ -85,7 +97,8 @@ class PostsListDataTable extends AbstractDataTables
                 return form()->customCheckbox([['id[]', $item->id]]);
             })
             ->editColumn('status', function ($item) {
-                return html()->label($item->status, $item->status);
+                $featured = ($item->is_featured) ? '<br><br>' . html()->label('featured', 'purple') : '';
+                return html()->label($item->status, $item->status) . $featured;
             })
             ->addColumn('actions', function ($item) {
                 /*Edit link*/

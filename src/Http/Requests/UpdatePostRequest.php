@@ -14,5 +14,6 @@ class UpdatePostRequest extends Request
         'keywords' => 'string|max:255',
         'status' => 'string|required|in:activated,disabled',
         'order' => 'integer|min:0',
+        'is_featured' => 'integer|in:0,1',
     ];
 }

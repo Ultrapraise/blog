@@ -60,8 +60,9 @@ class InstallModuleServiceProvider extends ServiceProvider
             $table->text('content')->nullable();
             $table->string('thumbnail', 255)->nullable();
             $table->string('keywords', 255)->nullable();
-            $table->enum('status', ['activated', 'disabled'])->default('activated');
             $table->integer('order')->default(0);
+            $table->enum('status', ['activated', 'disabled'])->default('activated');
+            $table->tinyInteger('is_featured')->default(0);
             $table->integer('created_by')->unsigned()->nullable();
             $table->integer('updated_by')->unsigned()->nullable();
             $table->timestamps();

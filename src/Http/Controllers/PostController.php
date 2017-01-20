@@ -58,7 +58,7 @@ class PostController extends BaseAdminController
     {
         $data = [];
         if ($this->request->get('customActionType', null) === 'group_action') {
-            if (!$this->userRepository->hasPermission($this->loggedInUser, 'edit-posts')) {
+            if (!$this->userRepository->hasPermission($this->loggedInUser, ['edit-posts'])) {
                 return [
                     'customActionMessage' => 'You do not have permission',
                     'customActionStatus' => 'danger',
@@ -70,7 +70,7 @@ class PostController extends BaseAdminController
 
             switch ($actionValue) {
                 case 'deleted':
-                    if (!$this->userRepository->hasPermission($this->loggedInUser, 'delete-posts')) {
+                    if (!$this->userRepository->hasPermission($this->loggedInUser, ['delete-posts'])) {
                         return [
                             'customActionMessage' => 'You do not have permission',
                             'customActionStatus' => 'danger',
@@ -268,6 +268,7 @@ class PostController extends BaseAdminController
             'content' => $this->request->get('content'),
             'thumbnail' => $this->request->get('thumbnail'),
             'order' => $this->request->get('order'),
+            'is_featured' => $this->request->get('is_featured') ?: 0,
             'updated_by' => $this->loggedInUser->id,
             'categories' => $this->request->get('categories') ?: [],
         ];

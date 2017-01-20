@@ -116,10 +116,28 @@
             ])
             <div class="box box-primary">
                 <div class="box-header with-border">
-                    <h3 class="box-title">Sort order</h3>
+                    <h3 class="box-title">Is featured</h3>
                     <div class="box-tools">
                         <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
                                 class="fa fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="box-body">
+                    <div class="form-group">
+                        {!! form()->customRadio('is_featured', [
+                            [0, 'No'],
+                            [1, 'Yes']
+                        ], (int)$object->is_featured) !!}
+                    </div>
+                </div>
+            </div>
+            <div class="box box-primary">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Sort order</h3>
+                    <div class="box-tools">
+                        <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
+                                    class="fa fa-minus"></i>
                         </button>
                     </div>
                 </div>

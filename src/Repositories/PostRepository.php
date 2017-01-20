@@ -18,6 +18,7 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
         'keywords' => 'string|max:255',
         'status' => 'string|required|in:activated,disabled',
         'order' => 'integer|min:0',
+        'is_featured' => 'integer|in:0,1',
         'created_by' => 'integer|min:0|required',
         'updated_by' => 'integer|min:0|required',
     ];
@@ -32,6 +33,7 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
         'keywords',
         'status',
         'order',
+        'is_featured',
         'created_by',
         'updated_by',
     ];
