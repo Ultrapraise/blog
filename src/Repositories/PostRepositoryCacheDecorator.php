@@ -3,6 +3,7 @@
 use WebEd\Base\Caching\Repositories\AbstractRepositoryCacheDecorator;
 
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
+use WebEd\Plugins\Blog\Models\Post;
 use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 
@@ -57,5 +58,14 @@ class PostRepositoryCacheDecorator extends AbstractRepositoryCacheDecorator  imp
     {
         call_user_func_array([$this->getRepository(), __FUNCTION__], func_get_args());
         return $this;
+    }
+
+    /**
+     * @param Post $post
+     * @return array
+     */
+    public function getRelatedCategoryIds(PostModelContract $post)
+    {
+        return $this->beforeGet(__FUNCTION__, func_get_args());
     }
 }

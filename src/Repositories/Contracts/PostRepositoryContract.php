@@ -1,6 +1,7 @@
 <?php namespace WebEd\Plugins\Blog\Repositories\Contracts;
 
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
+use WebEd\Plugins\Blog\Models\Post;
 
 interface PostRepositoryContract
 {
@@ -30,4 +31,10 @@ interface PostRepositoryContract
      * @return $this
      */
     public function whereBelongsToCategories(array $categoryIds);
+
+    /**
+     * @param Post $post
+     * @return array
+     */
+    public function getRelatedCategoryIds(PostModelContract $post);
 }

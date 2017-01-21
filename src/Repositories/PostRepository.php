@@ -4,6 +4,7 @@ use WebEd\Base\Core\Repositories\AbstractBaseRepository;
 use WebEd\Base\Caching\Services\Contracts\CacheableContract;
 
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
+use WebEd\Plugins\Blog\Models\Post;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 
 class PostRepository extends AbstractBaseRepository implements PostRepositoryContract, CacheableContract
@@ -115,5 +116,19 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
             ->where('categories.id', 'IN', $categoryIds)
             ->distinct()
             ->select('posts.*');
+    }
+
+    /**
+     * @param Post $post
+     * @return array
+     */
+    public function getRelatedCategoryIds(PostModelContract $post)
+    {
+        try {
+            return $post->categories()
+                ->getRelatedIds()->toArray();
+        } catch (\Exception $exception) {
+            return [];
+        }
     }
 }
