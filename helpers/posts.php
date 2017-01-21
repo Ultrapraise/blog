@@ -1,5 +1,8 @@
 <?php
 
+use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
+use WebEd\Plugins\Blog\Models\Post;
+
 if (!function_exists('get_posts_by_category')) {
     /**
      * @param array|string $categoryIds
@@ -31,5 +34,16 @@ if (!function_exists('get_posts_by_category')) {
         }
 
         return $result->get();
+    }
+}
+
+if (!function_exists('get_post_link')) {
+    /**
+     * @param Post $post
+     * @return string
+     */
+    function get_post_link(PostModelContract $post)
+    {
+        return route('front.web.resolve-blog.get', ['slug' => $post->slug]);
     }
 }

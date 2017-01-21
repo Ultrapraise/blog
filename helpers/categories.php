@@ -1,5 +1,8 @@
 <?php
 
+use WebEd\Plugins\Blog\Models\Contracts\CategoryModelContract;
+use WebEd\Plugins\Blog\Models\Category;
+
 if (!function_exists('get_categories')) {
     /**
      * @param string $indent
@@ -53,5 +56,16 @@ if (!function_exists('get_categories_with_children')) {
             $result[] = $category;
         }
         return $result;
+    }
+}
+
+if (!function_exists('get_category_link')) {
+    /**
+     * @param Category $category
+     * @return string
+     */
+    function get_category_link(CategoryModelContract $category)
+    {
+        return route('front.web.resolve-blog.get', ['slug' => $category->slug]);
     }
 }
