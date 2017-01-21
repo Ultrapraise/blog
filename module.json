@@ -4,6 +4,6 @@
     "author": "Tedozi Manson",
     "description": "Blog management package.",
     "namespace": "WebEd\\Plugins\\Blog",
-    "version": "2.0.7",
+    "version": "2.0.8",
     "autoload": "psr-4"
 }
