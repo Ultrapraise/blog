@@ -85,7 +85,7 @@ class PostsListDataTable extends AbstractDataTables
                  * @var PostRepository $query
                  */
                 if ($keyword === 'is_featured') {
-                    return $query->where('is_featured', '=', $keyword);
+                    return $query->where('is_featured', '=', 1);
                 } else {
                     return $query->where('status', '=', $keyword);
                 }
