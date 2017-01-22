@@ -1,5 +1,7 @@
 <?php namespace WebEd\Plugins\Blog\Repositories\Contracts;
 
+use WebEd\Plugins\Blog\Models\Category;
+
 interface CategoryRepositoryContract
 {
     /**
@@ -21,6 +23,12 @@ interface CategoryRepositoryContract
      * @return array
      */
     public function getChildren($id, $justId = true);
+
+    /**
+     * @param $id
+     * @return Category
+     */
+    public function getParent($id);
 
     /**
      * @param $id

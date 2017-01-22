@@ -3,6 +3,7 @@
 use WebEd\Base\Core\Repositories\AbstractBaseRepository;
 use WebEd\Base\Caching\Services\Contracts\CacheableContract;
 
+use WebEd\Plugins\Blog\Models\Category;
 use WebEd\Plugins\Blog\Models\Contracts\CategoryModelContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
 
@@ -84,6 +85,24 @@ class CategoryRepository extends AbstractBaseRepository implements CategoryRepos
             return $result;
         }
         return $children->get();
+    }
+
+    /**
+     * @param $id
+     * @return Category
+     */
+    public function getParent($id)
+    {
+        if ($id instanceof CategoryModelContract) {
+            $model = $id;
+        } else {
+            $model = $this->find($id);
+        }
+        if (!$model) {
+            return null;
+        }
+
+        return $model->parent()->first();
     }
 
     /**

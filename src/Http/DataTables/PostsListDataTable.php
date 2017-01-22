@@ -42,7 +42,7 @@ class PostsListDataTable extends AbstractDataTables
                 'class' => 'form-control form-filter input-sm',
                 'placeholder' => 'Search...'
             ]))
-            ->addFilter(3, form()->text('page_template', '', [
+            ->addFilter(3, form()->select('page_template', get_templates('Post'), null, [
                 'class' => 'form-control form-filter input-sm',
                 'placeholder' => 'Search...'
             ]))

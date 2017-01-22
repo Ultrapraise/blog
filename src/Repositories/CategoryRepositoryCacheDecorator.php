@@ -2,6 +2,7 @@
 
 use WebEd\Base\Caching\Repositories\AbstractRepositoryCacheDecorator;
 
+use WebEd\Plugins\Blog\Models\Category;
 use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
 
 class CategoryRepositoryCacheDecorator extends AbstractRepositoryCacheDecorator  implements CategoryRepositoryContract
@@ -31,6 +32,15 @@ class CategoryRepositoryCacheDecorator extends AbstractRepositoryCacheDecorator 
      * @return array
      */
     public function getChildren($id, $justId = true)
+    {
+        return $this->beforeGet(__FUNCTION__, func_get_args());
+    }
+
+    /**
+     * @param $id
+     * @return Category
+     */
+    public function getParent($id)
     {
         return $this->beforeGet(__FUNCTION__, func_get_args());
     }

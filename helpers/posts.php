@@ -5,7 +5,7 @@ use WebEd\Plugins\Blog\Models\Post;
 
 if (!function_exists('get_posts_by_category')) {
     /**
-     * @param array|string $categoryIds
+     * @param array|int $categoryIds
      * @param array $params
      * @return \Illuminate\Support\Collection|\Illuminate\Pagination\LengthAwarePaginator
      */
@@ -13,12 +13,15 @@ if (!function_exists('get_posts_by_category')) {
     {
         $params = array_merge([
             'status' => 'activated',
+            'take' => null,
             'per_page' => 0,
-            'current_page' => 0,
+            'current_paged' => 0,
             'order_by' => [
-                'order' => 'ASC'
+                'posts.order' => 'ASC'
             ],
+            'select' => ['posts.*']
         ], $params);
+
         /**
          * @var \WebEd\Plugins\Blog\Repositories\PostRepository $postRepo
          */
@@ -26,11 +29,16 @@ if (!function_exists('get_posts_by_category')) {
         $result = $postRepo
             ->where('posts.status', '=', array_get($params, 'status', 'activated'))
             ->whereBelongsToCategories((array)$categoryIds)
+            ->select(array_get($params, 'select'))
             ->orderBy(array_get($params, 'order_by', []));
+
+        if (array_get($params, 'take')) {
+            return $result->take(array_get($params, 'take'))->get();
+        }
 
         if (array_get($params, 'per_page')) {
             $result = $result->paginate(array_get($params, 'per_page'))
-                ->setCurrentPaged(array_get($params, 'current_page'));
+                ->setCurrentPaged(array_get($params, 'current_paged'));
         }
 
         return $result->get();

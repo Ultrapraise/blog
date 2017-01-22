@@ -126,6 +126,7 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
             ->join('categories', 'categories.id', '=', 'posts_categories.category_id')
             ->where('categories.id', 'IN', $categoryIds)
             ->distinct()
+            ->groupBy('posts.id')
             ->select('posts.*');
     }
 
@@ -172,6 +173,7 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
             ->join('blog_tags', 'blog_tags.id', '=', 'posts_tags.tag_id')
             ->where('blog_tags.id', 'IN', $tagIds)
             ->distinct()
+            ->groupBy('posts.id')
             ->select('posts.*');
     }
 
