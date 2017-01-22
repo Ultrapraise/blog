@@ -1,10 +1,14 @@
 <?php namespace WebEd\Plugins\Blog\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use WebEd\Plugins\Blog\Models\BlogTag;
 use WebEd\Plugins\Blog\Models\Category;
 use WebEd\Plugins\Blog\Models\Post;
+use WebEd\Plugins\Blog\Repositories\BlogTagRepository;
+use WebEd\Plugins\Blog\Repositories\BlogTagRepositoryCacheDecorator;
 use WebEd\Plugins\Blog\Repositories\CategoryRepository;
 use WebEd\Plugins\Blog\Repositories\CategoryRepositoryCacheDecorator;
+use WebEd\Plugins\Blog\Repositories\Contracts\BlogTagRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\PostRepository;
@@ -46,6 +50,16 @@ class RepositoryServiceProvider extends ServiceProvider
 
             if (config('webed-caching.repository.enabled')) {
                 return new CategoryRepositoryCacheDecorator($repository);
+            }
+
+            return $repository;
+        });
+
+        $this->app->bind(BlogTagRepositoryContract::class, function () {
+            $repository = new BlogTagRepository(new BlogTag());
+
+            if (config('webed-caching.repository.enabled')) {
+                return new BlogTagRepositoryCacheDecorator($repository);
             }
 
             return $repository;

@@ -68,4 +68,13 @@ class PostRepositoryCacheDecorator extends AbstractRepositoryCacheDecorator  imp
     {
         return $this->beforeGet(__FUNCTION__, func_get_args());
     }
+    /**
+     * @param Post $post
+     * @return array
+     */
+    public function getRelatedTagIds(PostModelContract $post)
+    {
+        return $this->beforeGet(__FUNCTION__, func_get_args());
+    }
+
 }

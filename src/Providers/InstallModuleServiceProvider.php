@@ -105,5 +105,35 @@ class InstallModuleServiceProvider extends ServiceProvider
             $table->foreign('post_id')->references('id')->on('posts')->onDelete('cascade');
             $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
         });
+
+        /**
+         * Tags
+         */
+        Schema::create('blog_tags', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
+            $table->increments('id');
+            $table->string('title');
+            $table->string('slug', 255)->nullable()->unique();
+            $table->text('description')->nullable();
+            $table->enum('status', ['activated', 'disabled'])->default('activated');
+            $table->integer('order')->default(0);
+            $table->integer('created_by')->unsigned()->nullable();
+            $table->integer('updated_by')->unsigned()->nullable();
+            $table->timestamps();
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
+        });
+
+        /**
+         * Mapper table for posts and blog_tags
+         */
+        Schema::create('posts_tags', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
+            $table->integer('post_id')->unsigned();
+            $table->integer('tag_id')->unsigned();
+            $table->unique(['post_id', 'tag_id']);
+            $table->foreign('post_id')->references('id')->on('posts')->onDelete('cascade');
+            $table->foreign('tag_id')->references('id')->on('blog_tags')->onDelete('cascade');
+        });
     }
 }

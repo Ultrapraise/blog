@@ -37,4 +37,10 @@ interface PostRepositoryContract
      * @return array
      */
     public function getRelatedCategoryIds(PostModelContract $post);
+
+    /**
+     * @param Post $post
+     * @return array
+     */
+    public function getRelatedTagIds(PostModelContract $post);
 }

@@ -72,6 +72,12 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
             unset($data['categories']);
         }
 
+        $tags = array_get($data, 'tags', null);
+
+        if ($tags !== null) {
+            unset($data['tags']);
+        }
+
         $result = $this->editWithValidate($id, $data, $allowCreateNew, $justUpdateSomeFields);
 
         if ($result['error']) {
@@ -81,6 +87,11 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
         $resultSync = $this->syncCategories($result['data'], $categories);
         if ($resultSync !== null) {
             $result['messages'][] = $resultSync;
+        }
+
+        $resultSyncTags = $this->syncTags($result['data'], $tags);
+        if ($resultSyncTags !== null) {
+            $result['messages'][] = $resultSyncTags;
         }
 
         return $result;
@@ -126,6 +137,39 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
     {
         try {
             return $post->categories()
+                ->getRelatedIds()->toArray();
+        } catch (\Exception $exception) {
+            return [];
+        }
+    }
+
+    /**
+     * @param Post $model
+     * @param array $tags
+     */
+    public function syncTags($model, $tags = null)
+    {
+        if ($tags === null) {
+            return null;
+        }
+
+        try {
+            $model->tags()->sync((array)$tags);
+            $message = 'Sync tags completed.';
+        } catch (\Exception $exception) {
+            $message = 'Some error occurred when sync tags.';
+        }
+        return $message;
+    }
+
+    /**
+     * @param Post $post
+     * @return array
+     */
+    public function getRelatedTagIds(PostModelContract $post)
+    {
+        try {
+            return $post->tags()
                 ->getRelatedIds()->toArray();
         } catch (\Exception $exception) {
             return [];

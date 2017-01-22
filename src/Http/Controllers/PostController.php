@@ -5,6 +5,8 @@ use WebEd\Plugins\Blog\Http\DataTables\PostsListDataTable;
 use WebEd\Plugins\Blog\Http\Requests\CreatePostRequest;
 use WebEd\Plugins\Blog\Http\Requests\UpdatePostRequest;
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
+use WebEd\Plugins\Blog\Repositories\BlogTagRepository;
+use WebEd\Plugins\Blog\Repositories\Contracts\BlogTagRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\PostRepository;
 use Yajra\Datatables\Engines\BaseEngine;
@@ -129,8 +131,6 @@ class PostController extends BaseAdminController
         $this->setPageTitle('Create post');
         $this->breadcrumbs->addLink('Create post');
 
-        $this->dis['currentId'] = 0;
-
         $this->dis['allCategories'] = get_categories_with_children();
 
         $this->dis['object'] = $this->repository->getModel();
@@ -172,10 +172,10 @@ class PostController extends BaseAdminController
     }
 
     /**
+     * @param BlogTagRepository $tagRepository
      * @param $id
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
-    public function getEdit($id)
+    public function getEdit(BlogTagRepositoryContract $tagRepository, $id)
     {
         $item = $this->repository->find($id);
         if (!$item) {
@@ -194,23 +194,21 @@ class PostController extends BaseAdminController
             ]);
 
         $this->dis['allCategories'] = get_categories_with_children();
-        $this->dis['categories'] = $item->categories()->getRelatedIds()->toArray();
+        $this->dis['categories'] = $this->repository->getRelatedCategoryIds($item);
 
-        $this->setPageTitle('Edit post', $item->title);
+        $this->dis['allTags'] = $tagRepository->all();
+        $this->dis['tags'] = $this->repository->getRelatedTagIds($item);
+
+        $this->setPageTitle('Edit post', '#' . $item->id);
         $this->breadcrumbs->addLink('Edit post');
 
         $this->dis['object'] = $item;
-        $this->dis['currentId'] = $id;
 
         return do_filter('blog.posts.edit.get', $this, $id)->viewAdmin('posts.edit');
     }
 
     public function postEdit(UpdatePostRequest $request, $id)
     {
-        $data = $this->parseInputData();
-
-        $id = do_filter('blog.posts.before-edit.post', $id);
-
         $item = $this->repository->find($id);
         if (!$item) {
             $this->flashMessagesHelper
@@ -219,6 +217,10 @@ class PostController extends BaseAdminController
 
             return redirect()->back();
         }
+
+        $item = do_filter('blog.posts.before-edit.post', $item);
+
+        $data = $this->parseInputData();
 
         $result = $this->repository->updatePost($item, $data);
 
@@ -234,7 +236,7 @@ class PostController extends BaseAdminController
             return redirect()->back();
         }
 
-        if ($this->request->has('_continue_edit')) {
+        if ($request->has('_continue_edit')) {
             return redirect()->back();
         }
 
@@ -271,6 +273,7 @@ class PostController extends BaseAdminController
             'is_featured' => $this->request->get('is_featured') ?: 0,
             'updated_by' => $this->loggedInUser->id,
             'categories' => $this->request->get('categories') ?: [],
+            'tags' => $this->request->get('tags') ?: [],
         ];
         return $data;
     }

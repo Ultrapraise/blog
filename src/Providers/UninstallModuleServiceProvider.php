@@ -40,6 +40,8 @@ class UninstallModuleServiceProvider extends ServiceProvider
     private function dropSchema()
     {
         Schema::dropIfExists('posts_categories');
+        Schema::dropIfExists('posts_tags');
+        Schema::dropIfExists('blog_tags');
         Schema::dropIfExists('categories');
         Schema::dropIfExists('posts');
     }

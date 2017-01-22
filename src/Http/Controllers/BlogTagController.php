@@ -1,58 +1,56 @@
 <?php namespace WebEd\Plugins\Blog\Http\Controllers;
 
 use WebEd\Base\Core\Http\Controllers\BaseAdminController;
-use WebEd\Base\Core\Support\DataTable\DataTables;
-use WebEd\Plugins\Blog\Http\DataTables\CategoriesListDataTable;
-use WebEd\Plugins\Blog\Http\Requests\CreateCategoryRequest;
-use WebEd\Plugins\Blog\Http\Requests\UpdateCategoryRequest;
-use WebEd\Plugins\Blog\Repositories\CategoryRepository;
-use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
+use WebEd\Plugins\Blog\Http\DataTables\BlogTagsListDataTable;
+use WebEd\Plugins\Blog\Http\Requests\CreateBlogTagRequest;
+use WebEd\Plugins\Blog\Http\Requests\UpdateBlogTagRequest;
+use WebEd\Plugins\Blog\Repositories\BlogTagRepository;
+use WebEd\Plugins\Blog\Repositories\Contracts\BlogTagRepositoryContract;
 use Yajra\Datatables\Engines\BaseEngine;
 
-class CategoryController extends BaseAdminController
+class BlogTagController extends BaseAdminController
 {
     protected $module = 'webed-blog';
 
     /**
-     * @var CategoryRepository|CategoryRepositoryContract
+     * @var BlogTagRepository
      */
     protected $repository;
 
     /**
-     * CategoryController constructor.
-     * @param CategoryRepository $repository
+     * @param BlogTagRepository $repository
      */
-    public function __construct(CategoryRepositoryContract $repository)
+    public function __construct(BlogTagRepositoryContract $repository)
     {
         parent::__construct();
 
         $this->repository = $repository;
 
         $this->breadcrumbs->addLink('Blog')
-            ->addLink('Categories', route('admin::blog.categories.index.get'));
+            ->addLink('Tags', route('admin::blog.tags.index.get'));
 
-        $this->getDashboardMenu('webed-blog-categories');
+        $this->getDashboardMenu('webed-blog-tags');
     }
 
-    public function getIndex(CategoriesListDataTable $categoriesListDataTable)
+    public function getIndex(BlogTagsListDataTable $blogTagsListDataTable)
     {
-        $this->setPageTitle('Categories', 'All available blog categories');
+        $this->setPageTitle('Tags', 'All available blog tags');
 
-        $this->dis['dataTable'] = $categoriesListDataTable->run();
+        $this->dis['dataTable'] = $blogTagsListDataTable->run();
 
-        return do_filter('blog.categories.index.get', $this)->viewAdmin('categories.index');
+        return do_filter('blog.tags.index.get', $this)->viewAdmin('tags.index');
     }
 
     /**
      * Get data for DataTable
-     * @param CategoriesListDataTable|BaseEngine $categoriesListDataTable
+     * @param BlogTagsListDataTable|BaseEngine $blogTagsListDataTable
      * @return \Illuminate\Http\JsonResponse
      */
-    public function postListing(CategoriesListDataTable $categoriesListDataTable)
+    public function postListing(BlogTagsListDataTable $blogTagsListDataTable)
     {
-        $data = $categoriesListDataTable->with($this->groupAction());
+        $data = $blogTagsListDataTable->with($this->groupAction());
 
-        return do_filter('datatables.blog.categories.index.post', $data, $this)
+        return do_filter('datatables.blog.tags.index.post', $data, $this)
             ->make(true);
     }
 
@@ -64,7 +62,7 @@ class CategoryController extends BaseAdminController
     {
         $data = [];
         if ($this->request->get('customActionType', null) === 'group_action') {
-            if (!$this->userRepository->hasPermission($this->loggedInUser, ['edit-categories'])) {
+            if (!$this->userRepository->hasPermission($this->loggedInUser, ['edit-tags'])) {
                 return [
                     'customActionMessage' => 'You do not have permission',
                     'customActionStatus' => 'danger',
@@ -76,7 +74,7 @@ class CategoryController extends BaseAdminController
 
             switch ($actionValue) {
                 case 'deleted':
-                    if (!$this->userRepository->hasPermission($this->loggedInUser, ['delete-categories'])) {
+                    if (!$this->userRepository->hasPermission($this->loggedInUser, ['delete-tags'])) {
                         return [
                             'customActionMessage' => 'You do not have permission',
                             'customActionStatus' => 'danger',
@@ -114,7 +112,7 @@ class CategoryController extends BaseAdminController
         $data = [
             'status' => $status
         ];
-        $result = $this->repository->updateCategory($id, $data);
+        $result = $this->repository->editWithValidate($id, $data);
         return response()->json($result, $result['response_code']);
     }
 
@@ -123,21 +121,8 @@ class CategoryController extends BaseAdminController
      */
     public function getCreate()
     {
-        $allCategories = get_categories();
-
-        $selectArr = ['' => 'Select...'];
-        foreach ($allCategories as $category) {
-            $selectArr[$category->id] = $category->indent_text . $category->title;
-        }
-        $this->dis['categories'] = $selectArr;
-
-        $this->assets
-            ->addJavascripts([
-                'jquery-ckeditor'
-            ]);
-
-        $this->setPageTitle('Create category');
-        $this->breadcrumbs->addLink('Create category');
+        $this->setPageTitle('Create tag');
+        $this->breadcrumbs->addLink('Create tag');
 
         $this->dis['object'] = $this->repository->getModel();
 
@@ -148,20 +133,18 @@ class CategoryController extends BaseAdminController
             }
         }
 
-        return do_filter('blog.categories.create.get', $this)->viewAdmin('categories.create');
+        return do_filter('blog.tags.create.get', $this)->viewAdmin('tags.create');
     }
 
-    public function postCreate(CreateCategoryRequest $request)
+    public function postCreate(CreateBlogTagRequest $request)
     {
-        $parentId = $request->get('parent_id') ?: null;
         $data = $this->parseInputData();
-        $data['parent_id'] = $parentId;
 
         $data['created_by'] = $this->loggedInUser->id;
 
-        $result = $this->repository->createCategory($data);
+        $result = $this->repository->createTag($data);
 
-        do_action('blog.categories.after-create.post', null, $result, $this);
+        do_action('blog.tags.after-create.post', null, $result, $this);
 
         $msgType = $result['error'] ? 'danger' : 'success';
 
@@ -174,10 +157,12 @@ class CategoryController extends BaseAdminController
         }
 
         if ($request->has('_continue_edit')) {
-            return redirect()->to(route('admin::blog.categories.edit.get', ['id' => $result['data']->id]));
+            if (!$result['error']) {
+                return redirect()->to(route('admin::blog.tags.edit.get', ['id' => $result['data']->id]));
+            }
         }
 
-        return redirect()->to(route('admin::blog.categories.index.get'));
+        return redirect()->to(route('admin::blog.tags.index.get'));
     }
 
     public function getEdit($id)
@@ -185,58 +170,45 @@ class CategoryController extends BaseAdminController
         $item = $this->repository->find($id);
         if (!$item) {
             $this->flashMessagesHelper
-                ->addMessages('This category not exists', 'danger')
+                ->addMessages('This tag not exists', 'danger')
                 ->showMessagesOnSession();
 
             return redirect()->back();
         }
 
-        $item = do_filter('blog.categories.before-edit.get', $item);
+        $item = do_filter('blog.tags.before-edit.get', $item);
 
         $this->assets
             ->addJavascripts([
                 'jquery-ckeditor'
             ]);
 
-        $categories = get_categories();
-
-        $selectArr = ['' => 'Select...'];
-        $childCategories = array_merge($this->repository->getAllRelatedChildrenIds($item), [$id]);
-        foreach ($categories as $category) {
-            if (!in_array($category->id, $childCategories)) {
-                $selectArr[$category->id] = $category->indent_text . $category->title;
-            }
-        }
-        $this->dis['categories'] = $selectArr;
-
-        $this->setPageTitle('Edit category', $item->title);
-        $this->breadcrumbs->addLink('Edit category');
+        $this->setPageTitle('Edit tag', $item->title);
+        $this->breadcrumbs->addLink('Edit tag');
 
         $this->dis['object'] = $item;
 
-        return do_filter('blog.categories.edit.get', $this, $id)->viewAdmin('categories.edit');
+        return do_filter('blog.tags.edit.get', $this, $id)->viewAdmin('tags.edit');
     }
 
-    public function postEdit(UpdateCategoryRequest $request, $id)
+    public function postEdit(UpdateBlogTagRequest $request, $id)
     {
         $item = $this->repository->find($id);
         if (!$item) {
             $this->flashMessagesHelper
-                ->addMessages('This category not exists', 'danger')
+                ->addMessages('This tag not exists', 'danger')
                 ->showMessagesOnSession();
 
             return redirect()->back();
         }
 
-        $item = do_filter('blog.categories.before-edit.post', $item);
+        $item = do_filter('blog.tags.before-edit.post', $item);
 
-        $parentId = (int)$request->get('parent_id') === (int)$id ? null : $request->get('parent_id') ?: null;
         $data = $this->parseInputData();
-        $data['parent_id'] = $parentId;
 
-        $result = $this->repository->updateCategory($item, $data);
+        $result = $this->repository->updateTag($item, $data);
 
-        do_action('blog.categories.after-edit.post', $id, $result, $this);
+        do_action('blog.tags.after-edit.post', $id, $result, $this);
 
         $msgType = $result['error'] ? 'danger' : 'success';
 
@@ -248,7 +220,7 @@ class CategoryController extends BaseAdminController
             return redirect()->back();
         }
 
-        return redirect()->to(route('admin::blog.categories.index.get'));
+        return redirect()->to(route('admin::blog.tags.index.get'));
     }
 
     /**
@@ -257,28 +229,25 @@ class CategoryController extends BaseAdminController
      */
     public function deleteDelete($id)
     {
-        $id = do_filter('blog.categories.before-delete.delete', $id);
+        $id = do_filter('blog.tags.before-delete.delete', $id);
 
         $result = $this->repository->delete($id);
 
-        do_action('blog.categories.after-delete.delete', $id, $result, $this);
+        do_action('blog.tags.after-delete.delete', $id, $result, $this);
 
         return response()->json($result, $result['response_code']);
     }
 
     protected function parseInputData()
     {
-        return [
-            'page_template' => $this->request->get('page_template', null),
+        $data = [
             'status' => $this->request->get('status'),
             'title' => $this->request->get('title'),
             'slug' => ($this->request->get('slug') ? str_slug($this->request->get('slug')) : str_slug($this->request->get('title'))),
-            'keywords' => $this->request->get('keywords'),
             'description' => $this->request->get('description'),
-            'content' => $this->request->get('content'),
-            'thumbnail' => $this->request->get('thumbnail'),
             'order' => $this->request->get('order'),
             'updated_by' => $this->loggedInUser->id,
         ];
+        return $data;
     }
 }

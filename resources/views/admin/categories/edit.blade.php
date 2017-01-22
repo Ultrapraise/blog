@@ -17,7 +17,7 @@
 @endsection
 
 @section('content')
-    {!! Form::open(['class' => 'js-validate-form', 'url' => route('admin::blog.categories.edit.post', ['id' => $currentId])]) !!}
+    {!! Form::open(['class' => 'js-validate-form', 'url' => route('admin::blog.categories.edit.post', ['id' => $object->id])]) !!}
     <div class="layout-2columns sidebar-right">
         <div class="column main">
             <div class="box box-primary">

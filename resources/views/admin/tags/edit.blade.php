@@ -9,15 +9,11 @@
 @endsection
 
 @section('js-init')
-    <script type="text/javascript">
-        $(document).ready(function () {
-            WebEd.ckeditor($('.js-ckeditor'));
-        });
-    </script>
+
 @endsection
 
 @section('content')
-    {!! Form::open(['class' => 'js-validate-form', 'url' => route('admin::blog.posts.edit.post', ['id' => $object->id])]) !!}
+    {!! Form::open(['class' => 'js-validate-form', 'url' => route('admin::blog.tags.edit.post', ['id' => $object->id])]) !!}
     <div class="layout-2columns sidebar-right">
         <div class="column main">
             <div class="box box-primary">
@@ -54,36 +50,12 @@
                             <label class="control-label">
                                 <b>Visit page:</b>
                             </label>
-                            <a href="{{ route('front.web.resolve-blog.get', ['slug' => $object->slug]) }}" target="_blank">{{ route('front.web.resolve-blog.get', ['slug' => $object->slug]) }}</a>
+                            <a href="{{ route('front.web.blog.tags.get', ['slug' => $object->slug]) }}"
+                               target="_blank">
+                                {{ route('front.web.blog.tags.get', ['slug' => $object->slug]) }}
+                            </a>
                         </div>
                     @endif
-                    <div class="form-group">
-                        <label class="control-label">
-                            <b>Content</b>
-                        </label>
-                        <textarea name="content"
-                                  class="form-control js-ckeditor">{{ $object->content or '' }}</textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="box box-primary">
-                <div class="box-header with-border">
-                    <h3 class="box-title">SEO</h3>
-                    <div class="box-tools">
-                        <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
-                                class="fa fa-minus"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="box-body">
-                    <div class="form-group">
-                        <label class="control-label">
-                            <b>Keywords</b>
-                        </label>
-                        <input type="text" name="keywords"
-                               class="form-control js-tags-input"
-                               value="{{ $object->keywords or '' }}" autocomplete="off">
-                    </div>
                     <div class="form-group">
                         <label class="control-label">
                             <b>Description</b>
@@ -94,57 +66,16 @@
                     </div>
                 </div>
             </div>
-            @php do_action('meta_boxes', 'main', 'blog.posts.edit', $object) @endphp
+            @php do_action('meta_boxes', 'main', 'blog.tags.edit', $object) @endphp
         </div>
         <div class="column right">
-            @php do_action('meta_boxes', 'top-sidebar', 'blog.posts.edit', $object) @endphp
-            @include('webed-core::admin._widgets.page-templates', [
-                'name' => 'page_template',
-                'templates' => get_templates('Post'),
-                'selected' => isset($object) ? $object->page_template : '',
-            ])
-            @include('webed-blog::admin._widgets.categories-multi', [
-                'name' => 'categories[]',
-                'title' => 'Categories',
-                'value' => (isset($categories) ? $categories : []),
-                'categories' => (isset($allCategories) ? $allCategories : []),
-                'object' => $object
-            ])
-            @include('webed-blog::admin._widgets.categories-multi', [
-                'name' => 'tags[]',
-                'title' => 'Tags',
-                'value' => (isset($tags) ? $tags : []),
-                'categories' => (isset($allTags) ? $allTags : []),
-                'object' => $object
-            ])
-            @include('webed-core::admin._widgets.thumbnail', [
-                'name' => 'thumbnail',
-                'value' => (isset($object->thumbnail) ? $object->thumbnail : null)
-            ])
-            <div class="box box-primary">
-                <div class="box-header with-border">
-                    <h3 class="box-title">Is featured</h3>
-                    <div class="box-tools">
-                        <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
-                                class="fa fa-minus"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="box-body">
-                    <div class="form-group">
-                        {!! form()->customRadio('is_featured', [
-                            [0, 'No'],
-                            [1, 'Yes']
-                        ], (int)$object->is_featured) !!}
-                    </div>
-                </div>
-            </div>
+            @php do_action('meta_boxes', 'top-sidebar', 'blog.tags.edit', $object) @endphp
             <div class="box box-primary">
                 <div class="box-header with-border">
                     <h3 class="box-title">Sort order</h3>
                     <div class="box-tools">
                         <button type="button" class="btn btn-box-tool" data-widget="collapse"><i
-                                    class="fa fa-minus"></i>
+                                class="fa fa-minus"></i>
                         </button>
                     </div>
                 </div>
@@ -160,7 +91,7 @@
                     </div>
                 </div>
             </div>
-            @php do_action('meta_boxes', 'bottom-sidebar', 'blog.posts.edit', $object) @endphp
+            @php do_action('meta_boxes', 'bottom-sidebar', 'blog.tags.edit', $object) @endphp
             <div class="box box-primary">
                 <div class="box-header with-border">
                     <h3 class="box-title">Publish content</h3>

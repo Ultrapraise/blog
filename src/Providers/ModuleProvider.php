@@ -1,5 +1,6 @@
 <?php namespace WebEd\Plugins\Blog\Providers;
 
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\ServiceProvider;
 
 class ModuleProvider extends ServiceProvider

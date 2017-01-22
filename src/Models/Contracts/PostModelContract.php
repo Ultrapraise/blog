@@ -6,4 +6,9 @@ interface PostModelContract
      * @return mixed
      */
     public function categories();
+
+    /**
+     * @return mixed
+     */
+    public function tags();
 }

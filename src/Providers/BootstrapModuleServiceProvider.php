@@ -56,6 +56,15 @@ class BootstrapModuleServiceProvider extends ServiceProvider
             'link' => route('admin::blog.categories.index.get'),
             'css_class' => null,
             'permissions' => ['view-categories'],
+        ])->registerItem([
+            'id' => 'webed-blog-tags',
+            'priority' => 2.2,
+            'parent_id' => null,
+            'title' => 'Tags',
+            'font_icon' => 'icon-tag',
+            'link' => route('admin::blog.tags.index.get'),
+            'css_class' => null,
+            'permissions' => ['view-tags'],
         ]);
 
         /**

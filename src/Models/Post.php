@@ -19,6 +19,11 @@ class Post extends BaseModel implements PostModelContract
         return $this->belongsToMany(Category::class, 'posts_categories', 'post_id', 'category_id');
     }
 
+    public function tags()
+    {
+        return $this->belongsToMany(BlogTag::class, 'posts_tags', 'post_id', 'tag_id');
+    }
+
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */

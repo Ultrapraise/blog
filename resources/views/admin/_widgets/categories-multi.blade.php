@@ -12,7 +12,7 @@
              style="max-height: 300px;"
              data-rail-visible="1">
             <div class="multi-choices-widget">
-                @if(isset($categories) && is_array($categories))
+                @if(isset($categories) && (is_array($categories) || $categories instanceof \Illuminate\Support\Collection))
                     @include('webed-blog::admin._widgets._categories-checkbox-option-line', [
                         'categories' => $categories,
                         'value' => (isset($value) ? $value : []),
