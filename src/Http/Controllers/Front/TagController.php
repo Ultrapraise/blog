@@ -2,31 +2,34 @@
 
 use WebEd\Base\Core\Http\Controllers\BaseFrontController;
 use WebEd\Plugins\Blog\Models\Category;
-use WebEd\Plugins\Blog\Models\Contracts\CategoryModelContract;
-use WebEd\Plugins\Blog\Repositories\CategoryRepository;
-use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
+use WebEd\Plugins\Blog\Repositories\BlogTagRepository;
+use WebEd\Plugins\Blog\Repositories\Contracts\BlogTagRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\PostRepository;
 
-class CategoryController extends BaseFrontController
+class TagController extends BaseFrontController
 {
+    /**
+     * @var BlogTagRepository
+     */
+    protected $repository;
+
     /**
      * @var PostRepository
      */
     protected $postRepository;
 
     /**
-     * @param CategoryRepository $repository
      * @param PostRepository $postRepository
      */
     public function __construct(
-        CategoryRepositoryContract $repository,
+        BlogTagRepositoryContract $repository,
         PostRepositoryContract $postRepository
     )
     {
         parent::__construct();
 
-        $this->themeController = themes_management()->getThemeController('Blog\Category');
+        $this->themeController = themes_management()->getThemeController('Blog\Tag');
 
         if (!$this->themeController) {
             echo 'You need to active a theme';
@@ -39,6 +42,7 @@ class CategoryController extends BaseFrontController
         }
 
         $this->repository = $repository;
+
         $this->postRepository = $postRepository;
     }
 
@@ -46,13 +50,23 @@ class CategoryController extends BaseFrontController
      * @param Category $item
      * @return mixed
      */
-    public function handle(CategoryModelContract $item)
+    public function handle($slug)
     {
+        $item = $this->repository
+            ->where([
+                'slug' => $slug,
+                'status' => 'activated'
+            ])->first();
+
+        if (!$item) {
+            abort(\Constants::NOT_FOUND_CODE);
+        }
+
         $this->setPageTitle($item->title);
 
         $this->dis['object'] = $item;
 
-        $this->dis['allRelatedCategoryIds'] = array_unique(array_merge($this->repository->getAllRelatedChildrenIds($item), [$item->id]));
+        increase_view_count($item, $item->id);
 
         return $this->themeController->handle($item, $this->dis);
     }

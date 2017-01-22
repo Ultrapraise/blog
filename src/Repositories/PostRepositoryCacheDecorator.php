@@ -4,6 +4,7 @@ use WebEd\Base\Caching\Repositories\AbstractRepositoryCacheDecorator;
 
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
 use WebEd\Plugins\Blog\Models\Post;
+use WebEd\Plugins\Blog\Repositories\Contracts\BlogTagRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 
@@ -36,7 +37,7 @@ class PostRepositoryCacheDecorator extends AbstractRepositoryCacheDecorator  imp
      */
     public function syncCategories($model, $categories = null)
     {
-        $result = call_user_func_array([$this->getRepository(), __FUNCTION__], func_get_args());
+        $result = call_user_func_array([$this->repository, __FUNCTION__], func_get_args());
 
         if (is_array($result) && isset($result['error']) && !$result['error']) {
             $this->getCacheInstance()->flushCache();
@@ -56,7 +57,7 @@ class PostRepositoryCacheDecorator extends AbstractRepositoryCacheDecorator  imp
      */
     public function whereBelongsToCategories(array $categoryIds)
     {
-        call_user_func_array([$this->getRepository(), __FUNCTION__], func_get_args());
+        call_user_func_array([$this->repository, __FUNCTION__], func_get_args());
         return $this;
     }
 
@@ -68,6 +69,37 @@ class PostRepositoryCacheDecorator extends AbstractRepositoryCacheDecorator  imp
     {
         return $this->beforeGet(__FUNCTION__, func_get_args());
     }
+
+    /**
+     * @param array $tagIds
+     * @return $this
+     */
+    public function whereBelongsToTags(array $tagIds)
+    {
+        call_user_func_array([$this->repository, __FUNCTION__], func_get_args());
+        return $this;
+    }
+
+    /**
+     * @param Post $model
+     * @param array $tags
+     */
+    public function syncTags($model, $tags = null)
+    {
+        $result = call_user_func_array([$this->repository, __FUNCTION__], func_get_args());
+
+        if (is_array($result) && isset($result['error']) && !$result['error']) {
+            $this->getCacheInstance()->flushCache();
+
+            /**
+             * @var BlogTagRepositoryCacheDecorator $blogTagRepository
+             */
+            $blogTagRepository = app(BlogTagRepositoryContract::class);
+            $blogTagRepository->getCacheInstance()->flushCache();
+        }
+        return $result;
+    }
+
     /**
      * @param Post $post
      * @return array
@@ -76,5 +108,4 @@ class PostRepositoryCacheDecorator extends AbstractRepositoryCacheDecorator  imp
     {
         return $this->beforeGet(__FUNCTION__, func_get_args());
     }
-
 }

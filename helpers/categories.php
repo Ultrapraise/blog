@@ -5,11 +5,15 @@ use WebEd\Plugins\Blog\Models\Category;
 
 if (!function_exists('get_categories')) {
     /**
+     * @param array $args
      * @param string $indent
-     * @return array
+     * @return array|mixed
      */
-    function get_categories($indent = '——')
+    function get_categories(array $args = [])
     {
+        $select = array_get($args, 'select', '*');
+        $indent = array_get($args, 'indent', '——');
+
         /**
          * @var \WebEd\Plugins\Blog\Repositories\CategoryRepository $repo
          */
@@ -17,6 +21,7 @@ if (!function_exists('get_categories')) {
         $categories = $repo
             ->orderBy('order', 'ASC')
             ->orderBy('created_at', 'DESC')
+            ->select($select)
             ->get();
 
         $categories = sort_item_with_children($categories);

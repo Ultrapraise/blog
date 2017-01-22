@@ -163,6 +163,19 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
     }
 
     /**
+     * @param array $tagIds
+     * @return $this
+     */
+    public function whereBelongsToTags(array $tagIds)
+    {
+        return $this->join('posts_tags', 'posts.id', '=', 'posts_tags.post_id')
+            ->join('blog_tags', 'blog_tags.id', '=', 'posts_tags.tag_id')
+            ->where('blog_tags.id', 'IN', $tagIds)
+            ->distinct()
+            ->select('posts.*');
+    }
+
+    /**
      * @param Post $post
      * @return array
      */

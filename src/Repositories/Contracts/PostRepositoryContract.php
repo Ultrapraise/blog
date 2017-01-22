@@ -39,6 +39,18 @@ interface PostRepositoryContract
     public function getRelatedCategoryIds(PostModelContract $post);
 
     /**
+     * @param array $tagIds
+     * @return $this
+     */
+    public function whereBelongsToTags(array $tagIds);
+
+    /**
+     * @param Post $model
+     * @param array $tags
+     */
+    public function syncTags($model, $tags = null);
+
+    /**
      * @param Post $post
      * @return array
      */
