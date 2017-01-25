@@ -26,7 +26,7 @@ $router->group(['prefix' => 'categories'], function (Router $router) {
 
     $router->get('edit/{id}', 'CategoryController@getEdit')
         ->name('admin::blog.categories.edit.get')
-        ->middleware('has-permission:edit-categories');
+        ->middleware('has-permission:view-categories');
 
     $router->post('edit/{id}', 'CategoryController@postEdit')
         ->name('admin::blog.categories.edit.post')

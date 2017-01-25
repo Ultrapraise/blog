@@ -13,10 +13,10 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
         'page_template' => 'string|max:255|nullable',
         'title' => 'string|max:255|required',
         'slug' => 'string|max:255|alpha_dash|unique:posts',
-        'description' => 'string|max:1000',
-        'content' => 'string',
-        'thumbnail' => 'string|max:255',
-        'keywords' => 'string|max:255',
+        'description' => 'string|max:1000|nullable',
+        'content' => 'string|nullable',
+        'thumbnail' => 'string|max:255|nullable',
+        'keywords' => 'string|max:255|nullable',
         'status' => 'string|required|in:activated,disabled',
         'order' => 'integer|min:0',
         'is_featured' => 'integer|in:0,1',
@@ -137,8 +137,7 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
     public function getRelatedCategoryIds(PostModelContract $post)
     {
         try {
-            return $post->categories()
-                ->getRelatedIds()->toArray();
+            return $post->categories()->allRelatedIds()->toArray();
         } catch (\Exception $exception) {
             return [];
         }
@@ -184,8 +183,7 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
     public function getRelatedTagIds(PostModelContract $post)
     {
         try {
-            return $post->tags()
-                ->getRelatedIds()->toArray();
+            return $post->tags()->allRelatedIds()->toArray();
         } catch (\Exception $exception) {
             return [];
         }

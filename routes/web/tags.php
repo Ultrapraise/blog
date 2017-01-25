@@ -26,7 +26,7 @@ $router->group(['prefix' => 'tags'], function (Router $router) {
 
     $router->get('edit/{id}', 'BlogTagController@getEdit')
         ->name('admin::blog.tags.edit.get')
-        ->middleware('has-permission:edit-tags');
+        ->middleware('has-permission:view-tags');
 
     $router->post('edit/{id}', 'BlogTagController@postEdit')
         ->name('admin::blog.tags.edit.post')

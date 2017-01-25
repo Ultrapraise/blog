@@ -119,9 +119,9 @@ class PostController extends BaseAdminController
     }
 
     /**
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * @param BlogTagRepository $tagRepository
      */
-    public function getCreate()
+    public function getCreate(BlogTagRepositoryContract $tagRepository)
     {
         $this->assets
             ->addJavascripts([
@@ -133,11 +133,23 @@ class PostController extends BaseAdminController
 
         $this->dis['allCategories'] = get_categories_with_children();
 
+        $this->dis['allTags'] = $tagRepository->all();
+
         $this->dis['object'] = $this->repository->getModel();
         $oldInputs = old();
         if ($oldInputs) {
             foreach ($oldInputs as $key => $row) {
-                $this->dis['object']->$key = $row;
+                switch ($key) {
+                    case 'categories':
+                        $this->dis['categories'] = $row;
+                        break;
+                    case 'tags':
+                        $this->dis['tags'] = $row;
+                        break;
+                    default:
+                        $this->dis['object']->$key = $row;
+                        break;
+                }
             }
         }
 

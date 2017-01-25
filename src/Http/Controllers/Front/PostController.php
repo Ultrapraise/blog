@@ -39,7 +39,7 @@ class PostController extends BaseFrontController
         /**
          * With post, we will active menu item by related categories
          */
-        $this->dis['categoryIds'] = $item->categories()->getRelatedIds()->toArray();
+        $this->dis['categoryIds'] = $this->repository->getRelatedCategoryIds($item);
 
         $this->setPageTitle($item->title);
 

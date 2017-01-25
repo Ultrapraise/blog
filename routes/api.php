@@ -1,10 +1,7 @@
-<?php use Illuminate\Routing\Router;
+<?php
+use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Route;
 
-/**
- *
- * @var Router $router
- *
- */
 Route::group(['prefix' => config('webed.api_route'), 'namespace' => 'Front\Api'], function (Router $router) {
     $router->resource('posts', 'PostController');
 });

@@ -10,7 +10,7 @@ class BlogTagRepository extends AbstractBaseRepository implements BlogTagReposit
     protected $rules = [
         'title' => 'string|max:255|required',
         'slug' => 'string|max:255|alpha_dash|unique:categories',
-        'description' => 'string|max:1000',
+        'description' => 'string|max:1000|nullable',
         'status' => 'string|required|in:activated,disabled',
         'order' => 'integer|min:0',
         'created_by' => 'integer|min:0|required',

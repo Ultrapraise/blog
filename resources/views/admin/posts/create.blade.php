@@ -102,6 +102,13 @@
                 'categories' => (isset($allCategories) ? $allCategories : []),
                 'object' => $object
             ])
+            @include('webed-blog::admin._widgets.categories-multi', [
+                'name' => 'tags[]',
+                'title' => 'Tags',
+                'value' => (isset($tags) ? $tags : []),
+                'categories' => (isset($allTags) ? $allTags : []),
+                'object' => $object
+            ])
             @include('webed-core::admin._widgets.thumbnail', [
                 'name' => 'thumbnail',
                 'value' => (isset($object->thumbnail) ? $object->thumbnail : null)

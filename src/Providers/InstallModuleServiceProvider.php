@@ -55,7 +55,7 @@ class InstallModuleServiceProvider extends ServiceProvider
             $table->increments('id');
             $table->string('title');
             $table->string('page_template', 255)->nullable();
-            $table->string('slug', 255)->nullable()->unique();
+            $table->string('slug', 255)->nullable();
             $table->text('description')->nullable();
             $table->text('content')->nullable();
             $table->string('thumbnail', 255)->nullable();
@@ -79,7 +79,7 @@ class InstallModuleServiceProvider extends ServiceProvider
             $table->integer('parent_id')->unsigned()->nullable();
             $table->string('title');
             $table->string('page_template', 255)->nullable();
-            $table->string('slug', 255)->nullable()->unique();
+            $table->string('slug', 255)->nullable();
             $table->text('description')->nullable();
             $table->text('content')->nullable();
             $table->string('thumbnail', 255)->nullable();
@@ -113,7 +113,7 @@ class InstallModuleServiceProvider extends ServiceProvider
             $table->engine = 'InnoDB';
             $table->increments('id');
             $table->string('title');
-            $table->string('slug', 255)->nullable()->unique();
+            $table->string('slug', 255)->nullable();
             $table->text('description')->nullable();
             $table->enum('status', ['activated', 'disabled'])->default('activated');
             $table->integer('order')->default(0);
