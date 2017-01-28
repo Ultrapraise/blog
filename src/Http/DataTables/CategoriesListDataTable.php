@@ -29,20 +29,6 @@ class CategoriesListDataTable extends AbstractDataTables
             ->addHeading('created_at', 'Created at', '10%')
             ->addHeading('actions', 'Actions', '20%');
 
-        $this
-            ->addFilter(1, form()->text('id', '', [
-                'class' => 'form-control form-filter input-sm',
-                'placeholder' => '...'
-            ]))
-            ->addFilter(2, form()->text('title', '', [
-                'class' => 'form-control form-filter input-sm',
-                'placeholder' => 'Search...'
-            ]))
-            ->addFilter(3, form()->select('page_template', get_templates('Category'), null, [
-                'class' => 'form-control form-filter input-sm',
-                'placeholder' => 'Search...'
-            ]));
-
         $this->withGroupActions([
             '' => 'Select' . '...',
             'deleted' => 'Deleted',
@@ -52,9 +38,9 @@ class CategoriesListDataTable extends AbstractDataTables
 
         $this->setColumns([
             ['data' => 'id', 'name' => 'id', 'searchable' => false, 'orderable' => false],
-            ['data' => 'viewID', 'name' => 'id',],
+            ['data' => 'viewID', 'name' => 'id', 'searchable' => false, 'orderable' => false],
             ['data' => 'title', 'name' => 'title', 'searchable' => false, 'orderable' => false],
-            ['data' => 'page_template', 'name' => 'page_template',],
+            ['data' => 'page_template', 'name' => 'page_template', 'orderable' => false],
             ['data' => 'status', 'name' => 'status', 'searchable' => false, 'orderable' => false],
             ['data' => 'order', 'name' => 'order', 'searchable' => false, 'orderable' => false],
             ['data' => 'created_at', 'name' => 'created_at', 'searchable' => false, 'orderable' => false],
