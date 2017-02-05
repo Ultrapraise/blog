@@ -1,11 +1,11 @@
 <?php namespace WebEd\Plugins\Blog\Repositories;
 
-use WebEd\Base\Caching\Repositories\AbstractRepositoryCacheDecorator;
+use WebEd\Base\Caching\Repositories\Eloquent\EloquentBaseRepositoryCacheDecorator;
 
 use WebEd\Plugins\Blog\Models\Category;
 use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
 
-class CategoryRepositoryCacheDecorator extends AbstractRepositoryCacheDecorator  implements CategoryRepositoryContract
+class CategoryRepositoryCacheDecorator extends EloquentBaseRepositoryCacheDecorator implements CategoryRepositoryContract
 {
     /**
      * @param $data

@@ -19,7 +19,10 @@ if (!function_exists('get_posts_by_category')) {
             'order_by' => [
                 'posts.order' => 'ASC'
             ],
-            'select' => ['posts.*']
+            'select' => [
+                'posts.id', 'posts.title', 'posts.slug', 'posts.created_at', 'posts.updated_at',
+                'posts.content', 'posts.description', 'posts.keywords', 'posts.order', 'posts.thumbnail'
+            ]
         ], $params);
 
         /**
@@ -28,7 +31,10 @@ if (!function_exists('get_posts_by_category')) {
         $postRepo = app(\WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract::class);
         $result = $postRepo
             ->where('posts.status', '=', array_get($params, 'status', 'activated'))
-            ->whereBelongsToCategories((array)$categoryIds)
+            ->pushCriteria(WebEd\Plugins\Blog\Criterias\Filter\WherePostBelongsToCategories::class, [
+                'categoryIds' => $categoryIds,
+                'groupBy' => $params['select']
+            ])
             ->select(array_get($params, 'select'))
             ->orderBy(array_get($params, 'order_by', []));
 
@@ -37,8 +43,7 @@ if (!function_exists('get_posts_by_category')) {
         }
 
         if (array_get($params, 'per_page')) {
-            $result = $result->paginate(array_get($params, 'per_page'))
-                ->setCurrentPaged(array_get($params, 'current_paged'));
+            return $result->paginate(array_get($params, 'per_page'), ['*'], 'page', array_get($params, 'current_paged'));
         }
 
         return $result->get();

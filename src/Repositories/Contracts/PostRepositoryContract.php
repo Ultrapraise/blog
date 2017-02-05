@@ -27,22 +27,10 @@ interface PostRepositoryContract
     public function syncCategories($model, $categories = null);
 
     /**
-     * @param array $categoryIds
-     * @return $this
-     */
-    public function whereBelongsToCategories(array $categoryIds);
-
-    /**
      * @param Post $post
      * @return array
      */
     public function getRelatedCategoryIds(PostModelContract $post);
-
-    /**
-     * @param array $tagIds
-     * @return $this
-     */
-    public function whereBelongsToTags(array $tagIds);
 
     /**
      * @param Post $model

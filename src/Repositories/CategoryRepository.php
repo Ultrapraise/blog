@@ -1,14 +1,17 @@
 <?php namespace WebEd\Plugins\Blog\Repositories;
 
-use WebEd\Base\Core\Repositories\AbstractBaseRepository;
+use WebEd\Base\Caching\Services\Traits\Cacheable;
+use WebEd\Base\Core\Repositories\Eloquent\EloquentBaseRepository;
 use WebEd\Base\Caching\Services\Contracts\CacheableContract;
 
 use WebEd\Plugins\Blog\Models\Category;
 use WebEd\Plugins\Blog\Models\Contracts\CategoryModelContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
 
-class CategoryRepository extends AbstractBaseRepository implements CategoryRepositoryContract, CacheableContract
+class CategoryRepository extends EloquentBaseRepository implements CategoryRepositoryContract, CacheableContract
 {
+    use Cacheable;
+
     protected $rules = [
         'parent_id' => 'integer|min:0|nullable',
         'page_template' => 'string|max:255|nullable',

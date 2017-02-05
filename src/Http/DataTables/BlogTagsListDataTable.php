@@ -1,19 +1,19 @@
 <?php namespace WebEd\Plugins\Blog\Http\DataTables;
 
+use Illuminate\Database\Eloquent\Builder;
 use WebEd\Base\Core\Http\DataTables\AbstractDataTables;
-use WebEd\Plugins\Blog\Repositories\BlogTagRepository;
-use WebEd\Plugins\Blog\Repositories\Contracts\BlogTagRepositoryContract;
+use WebEd\Plugins\Blog\Models\BlogTag;
 
 class BlogTagsListDataTable extends AbstractDataTables
 {
     /**
-     * @var BlogTagRepository
+     * @var BlogTag|Builder
      */
-    protected $repository;
+    protected $model;
 
-    public function __construct(BlogTagRepositoryContract $repository)
+    public function __construct()
     {
-        $this->repository = $repository;
+        $this->model = BlogTag::select('title', 'status', 'slug', 'order', 'created_at');
 
         parent::__construct();
     }
@@ -75,7 +75,7 @@ class BlogTagsListDataTable extends AbstractDataTables
      */
     protected function fetch()
     {
-        $this->fetch = datatable()->of($this->repository)
+        $this->fetch = datatable()->of($this->model)
             ->editColumn('id', function ($item) {
                 return form()->customCheckbox([['id[]', $item->id]]);
             })

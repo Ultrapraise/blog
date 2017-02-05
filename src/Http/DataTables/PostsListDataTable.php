@@ -1,18 +1,16 @@
 <?php namespace WebEd\Plugins\Blog\Http\DataTables;
 
 use WebEd\Base\Core\Http\DataTables\AbstractDataTables;
-use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
+use WebEd\Plugins\Blog\Models\Post;
 use WebEd\Plugins\Blog\Repositories\PostRepository;
 
 class PostsListDataTable extends AbstractDataTables
 {
-    protected $repository;
+    protected $model;
 
-    public function __construct(PostRepositoryContract $repository)
+    public function __construct()
     {
-        $this->repository = $repository;
-
-        $this->repository->select('id', 'created_at', 'title', 'page_template', 'status', 'order', 'is_featured');
+        $this->model = Post::select('id', 'created_at', 'title', 'page_template', 'status', 'order', 'is_featured');
 
         parent::__construct();
     }
@@ -79,7 +77,7 @@ class PostsListDataTable extends AbstractDataTables
      */
     protected function fetch()
     {
-        $this->fetch = datatable()->of($this->repository)
+        $this->fetch = datatable()->of($this->model)
             ->filterColumn('status', function ($query, $keyword) {
                 /**
                  * @var PostRepository $query

@@ -1,6 +1,6 @@
 <?php namespace WebEd\Plugins\Blog\Repositories;
 
-use WebEd\Base\Caching\Repositories\AbstractRepositoryCacheDecorator;
+use WebEd\Base\Caching\Repositories\Eloquent\EloquentBaseRepositoryCacheDecorator;
 
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
 use WebEd\Plugins\Blog\Models\Post;
@@ -8,7 +8,7 @@ use WebEd\Plugins\Blog\Repositories\Contracts\BlogTagRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 
-class PostRepositoryCacheDecorator extends AbstractRepositoryCacheDecorator  implements PostRepositoryContract
+class PostRepositoryCacheDecorator extends EloquentBaseRepositoryCacheDecorator implements PostRepositoryContract
 {
     /**
      * @param array $data
@@ -52,32 +52,12 @@ class PostRepositoryCacheDecorator extends AbstractRepositoryCacheDecorator  imp
     }
 
     /**
-     * @param array $categoryIds
-     * @return $this
-     */
-    public function whereBelongsToCategories(array $categoryIds)
-    {
-        call_user_func_array([$this->repository, __FUNCTION__], func_get_args());
-        return $this;
-    }
-
-    /**
      * @param Post $post
      * @return array
      */
     public function getRelatedCategoryIds(PostModelContract $post)
     {
         return $this->beforeGet(__FUNCTION__, func_get_args());
-    }
-
-    /**
-     * @param array $tagIds
-     * @return $this
-     */
-    public function whereBelongsToTags(array $tagIds)
-    {
-        call_user_func_array([$this->repository, __FUNCTION__], func_get_args());
-        return $this;
     }
 
     /**

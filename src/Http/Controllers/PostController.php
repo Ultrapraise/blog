@@ -133,7 +133,7 @@ class PostController extends BaseAdminController
 
         $this->dis['allCategories'] = get_categories_with_children();
 
-        $this->dis['allTags'] = $tagRepository->all();
+        $this->dis['allTags'] = $tagRepository->get();
 
         $this->dis['object'] = $this->repository->getModel();
         $oldInputs = old();
@@ -208,7 +208,7 @@ class PostController extends BaseAdminController
         $this->dis['allCategories'] = get_categories_with_children();
         $this->dis['categories'] = $this->repository->getRelatedCategoryIds($item);
 
-        $this->dis['allTags'] = $tagRepository->all();
+        $this->dis['allTags'] = $tagRepository->get();
         $this->dis['tags'] = $this->repository->getRelatedTagIds($item);
 
         $this->setPageTitle('Edit post', '#' . $item->id);

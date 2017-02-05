@@ -1,14 +1,19 @@
 <?php namespace WebEd\Plugins\Blog\Repositories;
 
-use WebEd\Base\Core\Repositories\AbstractBaseRepository;
+use WebEd\Base\Caching\Services\Traits\Cacheable;
+use WebEd\Base\Core\Repositories\Eloquent\EloquentBaseRepository;
 use WebEd\Base\Caching\Services\Contracts\CacheableContract;
 
+use WebEd\Plugins\Blog\Criterias\Filter\WherePostBelongsToCategories;
+use WebEd\Plugins\Blog\Criterias\Filter\WherePostBelongsToTags;
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
 use WebEd\Plugins\Blog\Models\Post;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 
-class PostRepository extends AbstractBaseRepository implements PostRepositoryContract, CacheableContract
+class PostRepository extends EloquentBaseRepository implements PostRepositoryContract, CacheableContract
 {
+    use Cacheable;
+
     protected $rules = [
         'page_template' => 'string|max:255|nullable',
         'title' => 'string|max:255|required',
@@ -117,20 +122,6 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
     }
 
     /**
-     * @param array $categoryIds
-     * @return $this
-     */
-    public function whereBelongsToCategories(array $categoryIds)
-    {
-        return $this->join('posts_categories', 'posts.id', '=', 'posts_categories.post_id')
-            ->join('categories', 'categories.id', '=', 'posts_categories.category_id')
-            ->where('categories.id', 'IN', $categoryIds)
-            ->distinct()
-            ->groupBy('posts.id')
-            ->select('posts.*');
-    }
-
-    /**
      * @param Post $post
      * @return array
      */
@@ -160,20 +151,6 @@ class PostRepository extends AbstractBaseRepository implements PostRepositoryCon
             $message = 'Some error occurred when sync tags.';
         }
         return $message;
-    }
-
-    /**
-     * @param array $tagIds
-     * @return $this
-     */
-    public function whereBelongsToTags(array $tagIds)
-    {
-        return $this->join('posts_tags', 'posts.id', '=', 'posts_tags.post_id')
-            ->join('blog_tags', 'blog_tags.id', '=', 'posts_tags.tag_id')
-            ->where('blog_tags.id', 'IN', $tagIds)
-            ->distinct()
-            ->groupBy('posts.id')
-            ->select('posts.*');
     }
 
     /**

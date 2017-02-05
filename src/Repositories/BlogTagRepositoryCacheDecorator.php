@@ -1,10 +1,10 @@
 <?php namespace WebEd\Plugins\Blog\Repositories;
 
-use WebEd\Base\Caching\Repositories\AbstractRepositoryCacheDecorator;
+use WebEd\Base\Caching\Repositories\Eloquent\EloquentBaseRepositoryCacheDecorator;
 
 use WebEd\Plugins\Blog\Repositories\Contracts\BlogTagRepositoryContract;
 
-class BlogTagRepositoryCacheDecorator extends AbstractRepositoryCacheDecorator  implements BlogTagRepositoryContract
+class BlogTagRepositoryCacheDecorator extends EloquentBaseRepositoryCacheDecorator  implements BlogTagRepositoryContract
 {
     /**
      * @param $data

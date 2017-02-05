@@ -1,12 +1,15 @@
 <?php namespace WebEd\Plugins\Blog\Repositories;
 
-use WebEd\Base\Core\Repositories\AbstractBaseRepository;
+use WebEd\Base\Caching\Services\Traits\Cacheable;
+use WebEd\Base\Core\Repositories\Eloquent\EloquentBaseRepository;
 use WebEd\Base\Caching\Services\Contracts\CacheableContract;
 
 use WebEd\Plugins\Blog\Repositories\Contracts\BlogTagRepositoryContract;
 
-class BlogTagRepository extends AbstractBaseRepository implements BlogTagRepositoryContract, CacheableContract
+class BlogTagRepository extends EloquentBaseRepository implements BlogTagRepositoryContract, CacheableContract
 {
+    use Cacheable;
+
     protected $rules = [
         'title' => 'string|max:255|required',
         'slug' => 'string|max:255|alpha_dash|unique:categories',
