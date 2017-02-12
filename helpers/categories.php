@@ -41,10 +41,9 @@ if (!function_exists('get_categories')) {
 
 if (!function_exists('get_categories_with_children')) {
     /**
-     * @param null $parentId
      * @return array
      */
-    function get_categories_with_children($parentId = null)
+    function get_categories_with_children()
     {
         /**
          * @var \WebEd\Plugins\Blog\Repositories\CategoryRepository $repo
@@ -53,14 +52,17 @@ if (!function_exists('get_categories_with_children')) {
         $categories = $repo
             ->orderBy('order', 'ASC')
             ->orderBy('created_at', 'DESC')
-            ->where('parent_id', '=', $parentId)->get();
+            ->get();
 
-        $result = [];
-        foreach ($categories as $category) {
-            $category->child_cats = get_categories_with_children($category->id);
-            $result[] = $category;
-        }
-        return $result;
+        /**
+         * @var \WebEd\Base\Core\Support\SortItemsWithChildrenHelper $sortHelper
+         */
+        $sortHelper = app(\WebEd\Base\Core\Support\SortItemsWithChildrenHelper::class);
+        $sortHelper
+            ->setChildrenProperty('child_cats')
+            ->setItems($categories);
+
+        return $sortHelper->sort();
     }
 }
 
