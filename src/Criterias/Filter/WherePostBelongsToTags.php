@@ -7,19 +7,28 @@ use WebEd\Plugins\Blog\Models\Post;
 
 class WherePostBelongsToTags extends AbstractCriteria
 {
-     /**
+    protected $tagIds;
+
+    protected $groupBy;
+
+    public function __construct(array $tagIds, array $groupBy)
+    {
+        $this->tagIds = $tagIds;
+
+        $this->groupBy = $groupBy;
+    }
+
+    /**
       * @param Post|Builder $model
       * @param AbstractRepositoryContract $repository
-      * @param array $crossData
       * @return mixed
       */
-    public function apply($model, AbstractRepositoryContract $repository, array $crossData = [])
+    public function apply($model, AbstractRepositoryContract $repository)
     {
         return $model->join('posts_tags', 'posts.id', '=', 'posts_tags.post_id')
             ->join('blog_tags', 'blog_tags.id', '=', 'posts_tags.tag_id')
-            ->where('blog_tags.id', 'IN', $crossData['tagIds'])
+            ->whereIn('blog_tags.id', $this->tagIds)
             ->distinct()
-            ->groupBy('posts.id')
-            ->select('posts.*');
+            ->groupBy($this->groupBy);
     }
 }

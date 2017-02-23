@@ -11,7 +11,6 @@ if (!function_exists('get_categories')) {
      */
     function get_categories(array $args = [])
     {
-        $select = array_get($args, 'select', '*');
         $indent = array_get($args, 'indent', '——');
 
         /**
@@ -21,7 +20,7 @@ if (!function_exists('get_categories')) {
         $categories = $repo
             ->orderBy('order', 'ASC')
             ->orderBy('created_at', 'DESC')
-            ->select($select)
+            ->select(array_get($args, 'select', ['*']))
             ->get();
 
         $categories = sort_item_with_children($categories);

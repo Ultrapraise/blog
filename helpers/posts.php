@@ -31,10 +31,7 @@ if (!function_exists('get_posts_by_category')) {
         $postRepo = app(\WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract::class);
         $result = $postRepo
             ->where('posts.status', '=', array_get($params, 'status', 'activated'))
-            ->pushCriteria(WebEd\Plugins\Blog\Criterias\Filter\WherePostBelongsToCategories::class, [
-                'categoryIds' => $categoryIds,
-                'groupBy' => $params['select']
-            ])
+            ->pushCriteria(new WebEd\Plugins\Blog\Criterias\Filter\WherePostBelongsToCategories($categoryIds, $params['select']))
             ->select(array_get($params, 'select'))
             ->orderBy(array_get($params, 'order_by', []));
 
