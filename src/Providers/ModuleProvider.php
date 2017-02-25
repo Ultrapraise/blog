@@ -8,7 +8,7 @@ class ModuleProvider extends ServiceProvider
     /**
      * Bootstrap the application services.
      *
-     * @return voidw
+     * @return void
      */
     public function boot()
     {
