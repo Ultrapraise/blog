@@ -4,21 +4,28 @@ use \WebEd\Plugins\Blog\Models\BlogTag;
 
 if (!function_exists('get_posts_by_tag')) {
     /**
-     * @param array|int $tagIds
+     * @param array|int $categoryIds
      * @param array $params
      * @return \Illuminate\Support\Collection|\Illuminate\Pagination\LengthAwarePaginator
      */
-    function get_posts_by_tag($tagIds, array $params = [])
+    function get_posts_by_tag($tagId, array $params = [])
     {
         $params = array_merge([
             'status' => 'activated',
             'take' => null,
             'per_page' => 0,
-            'current_paged' => 0,
+            'current_paged' => 1,
             'order_by' => [
                 'posts.order' => 'ASC'
             ],
-            'select' => ['posts.*']
+            'select' => [
+                'posts.id', 'posts.title', 'posts.slug', 'posts.created_at', 'posts.updated_at',
+                'posts.content', 'posts.description', 'posts.keywords', 'posts.order', 'posts.thumbnail'
+            ],
+            'group_by' => [
+                'posts.id', 'posts.title', 'posts.slug', 'posts.created_at', 'posts.updated_at',
+                'posts.content', 'posts.description', 'posts.keywords', 'posts.order', 'posts.thumbnail'
+            ]
         ], $params);
 
         /**
@@ -26,20 +33,17 @@ if (!function_exists('get_posts_by_tag')) {
          */
         $postRepo = app(\WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract::class);
         $result = $postRepo
-            ->where('posts.status', '=', array_get($params, 'status', 'activated'))
-            ->whereBelongsToTags((array)$tagIds)
-            ->select(array_get($params, 'select'))
-            ->groupBy('posts.id')
-            ->distinct()
-            ->orderBy(array_get($params, 'order_by', []));
+            ->where('posts.status', '=', $params['status'])
+            ->pushCriteria(new WebEd\Plugins\Blog\Criterias\Filter\WherePostBelongsToTags((array)$tagId, $params['group_by']))
+            ->select($params['select'])
+            ->orderBy($params['order_by']);
 
-        if (array_get($params, 'take')) {
-            return $result->take(array_get($params, 'take'))->get();
+        if ($params['take']) {
+            return $result->take($params['take'])->get();
         }
 
-        if (array_get($params, 'per_page')) {
-            $result = $result->paginate(array_get($params, 'per_page'))
-                ->setCurrentPaged(array_get($params, 'current_paged'));
+        if ($params['per_page']) {
+            return $result->paginate($params['per_page'], ['*'], 'page', $params['current_paged']);
         }
 
         return $result->get();
