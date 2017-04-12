@@ -1,8 +1,9 @@
-<?php namespace WebEd\Plugins\Blog\Criterias\Filter;
+<?php namespace WebEd\Plugins\Blog\Criterias\Filters;
 
 use Illuminate\Database\Eloquent\Builder;
-use WebEd\Base\Core\Repositories\Contracts\AbstractRepositoryContract;
-use WebEd\Base\Core\Criterias\AbstractCriteria;
+use WebEd\Base\Criterias\AbstractCriteria;
+use WebEd\Base\Repositories\AbstractBaseRepository;
+use WebEd\Base\Repositories\Contracts\AbstractRepositoryContract;
 use WebEd\Plugins\Blog\Models\Post;
 
 class WherePostBelongsToCategories extends AbstractCriteria
@@ -24,9 +25,9 @@ class WherePostBelongsToCategories extends AbstractCriteria
         $this->groupBy = $groupBy;
     }
 
-    /**
+     /**
       * @param Post|Builder $model
-      * @param AbstractRepositoryContract $repository
+      * @param AbstractBaseRepository $repository
       * @return mixed
       */
     public function apply($model, AbstractRepositoryContract $repository)

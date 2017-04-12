@@ -1,46 +1,70 @@
 <?php namespace WebEd\Plugins\Blog\Repositories\Contracts;
 
+use Illuminate\Support\Collection;
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
-use WebEd\Plugins\Blog\Models\Post;
 
 interface PostRepositoryContract
 {
     /**
      * @param array $data
-     * @return array
+     * @param array|null $categories
+     * @param array|null $tags
+     * @return int|null
      */
-    public function createPost($data);
+    public function createPost(array $data, array $categories = null, array $tags = null);
 
     /**
-     * @param $id
-     * @param $data
-     * @param bool $allowCreateNew
-     * @param bool $justUpdateSomeFields
-     * @return array
+     * @param int|null|PostModelContract $id
+     * @param array $data
+     * @param array|null $categories
+     * @param array|null $tags
+     * @return int|null
      */
-    public function updatePost($id, $data, $allowCreateNew = false, $justUpdateSomeFields = true);
+    public function createOrUpdatePost($id, array $data, array $categories = null, array $tags = null);
 
     /**
-     * @param PostModelContract $model
+     * @param int|null|PostModelContract $id
+     * @param array $data
+     * @return int
+     */
+    public function updatePost($id, array $data, array $categories = null, array $tags = null);
+
+    /**
+     * @param int|PostModelContract|array $id
+     * @return bool
+     */
+    public function deletePost($id);
+
+    /**
+     * @param PostModelContract|int $model
      * @param array $categories
+     * @return bool|null
      */
-    public function syncCategories($model, $categories = null);
+    public function syncCategories($model, array $categories);
 
     /**
-     * @param Post $post
+     * @param PostModelContract|int $model
      * @return array
      */
-    public function getRelatedCategoryIds(PostModelContract $post);
+    public function getRelatedCategoryIds($model);
 
     /**
-     * @param Post $model
+     * @param PostModelContract|int $model
      * @param array $tags
+     * @return bool|null
      */
-    public function syncTags($model, $tags = null);
+    public function syncTags($model, array $tags);
 
     /**
-     * @param Post $post
+     * @param PostModelContract|int $model
      * @return array
      */
-    public function getRelatedTagIds(PostModelContract $post);
+    public function getRelatedTagIds($model);
+
+    /**
+     * @param array|int $categoryId
+     * @param array $params
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator|\Illuminate\Database\Eloquent\Collection|Collection
+     */
+    public function getPostsByCategory($categoryId, array $params = []);
 }

@@ -2,7 +2,7 @@
 
 use WebEd\Base\Users\Models\User;
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
-use WebEd\Base\Core\Models\EloquentBase as BaseModel;
+use WebEd\Base\Models\EloquentBase as BaseModel;
 
 class Post extends BaseModel implements PostModelContract
 {
@@ -10,7 +10,20 @@ class Post extends BaseModel implements PostModelContract
 
     protected $primaryKey = 'id';
 
-    protected $fillable = [];
+    protected $fillable = [
+        'title',
+        'page_template',
+        'slug',
+        'description',
+        'content',
+        'thumbnail',
+        'keywords',
+        'status',
+        'order',
+        'is_featured',
+        'created_by',
+        'updated_by',
+    ];
 
     public $timestamps = true;
 

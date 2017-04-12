@@ -1,26 +1,46 @@
 <?php namespace WebEd\Plugins\Blog\Repositories;
 
-use WebEd\Base\Caching\Repositories\Eloquent\EloquentBaseRepositoryCacheDecorator;
+use WebEd\Base\Repositories\Eloquent\EloquentBaseRepositoryCacheDecorator;
 
 use WebEd\Plugins\Blog\Repositories\Contracts\BlogTagRepositoryContract;
+use WebEd\Base\Models\Contracts\BaseModelContract;
 
-class BlogTagRepositoryCacheDecorator extends EloquentBaseRepositoryCacheDecorator  implements BlogTagRepositoryContract
+class BlogTagRepositoryCacheDecorator extends EloquentBaseRepositoryCacheDecorator implements BlogTagRepositoryContract
 {
     /**
-     * @param $data
-     * @return array
+     * @param array $data
+     * @return int
      */
-    public function createTag(array $data)
+    public function createBlogTag(array $data)
     {
         return $this->afterUpdate(__FUNCTION__, func_get_args());
     }
 
     /**
-     * @param $id
-     * @param $data
-     * @return array
+     * @param int|null|BaseModelContract $id
+     * @param array $data
+     * @return int
      */
-    public function updateTag($id, array $data)
+    public function createOrUpdateBlogTag($id, array $data)
+    {
+        return $this->afterUpdate(__FUNCTION__, func_get_args());
+    }
+
+    /**
+     * @param int|null|BaseModelContract $id
+     * @param array $data
+     * @return int
+     */
+    public function updateBlogTag($id, array $data)
+    {
+        return $this->afterUpdate(__FUNCTION__, func_get_args());
+    }
+
+    /**
+     * @param int|BaseModelContract|array $id
+     * @return bool
+     */
+    public function deleteBlogTag($id)
     {
         return $this->afterUpdate(__FUNCTION__, func_get_args());
     }

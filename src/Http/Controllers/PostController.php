@@ -1,10 +1,11 @@
 <?php namespace WebEd\Plugins\Blog\Http\Controllers;
 
-use WebEd\Base\Core\Http\Controllers\BaseAdminController;
+use Illuminate\Http\Request;
+use WebEd\Base\Http\Controllers\BaseAdminController;
+use WebEd\Base\Http\DataTables\AbstractDataTables;
 use WebEd\Plugins\Blog\Http\DataTables\PostsListDataTable;
 use WebEd\Plugins\Blog\Http\Requests\CreatePostRequest;
 use WebEd\Plugins\Blog\Http\Requests\UpdatePostRequest;
-use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
 use WebEd\Plugins\Blog\Repositories\BlogTagRepository;
 use WebEd\Plugins\Blog\Repositories\Contracts\BlogTagRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
@@ -16,7 +17,11 @@ class PostController extends BaseAdminController
     protected $module = 'webed-blog';
 
     /**
-     * PostController constructor.
+     * @var PostRepository
+     */
+    protected $repository;
+
+    /**
      * @param PostRepository $repository
      */
     public function __construct(PostRepositoryContract $repository)
@@ -25,44 +30,52 @@ class PostController extends BaseAdminController
 
         $this->repository = $repository;
 
-        $this->breadcrumbs->addLink('Blog')
-            ->addLink('Posts', route('admin::blog.posts.index.get'));
+        $this->middleware(function (Request $request, $next) {
+            $this->getDashboardMenu($this->module . '-posts');
 
-        $this->getDashboardMenu('webed-blog-posts');
-    }
+            $this->breadcrumbs
+                ->addLink(trans('webed-blog::base.page_title'))
+                ->addLink(trans('webed-blog::base.posts.page_title'), route('admin::blog.posts.index.get'));
 
-    public function getIndex(PostsListDataTable $postsListDataTable)
-    {
-        $this->setPageTitle('Posts', 'All available blog posts');
-
-        $this->dis['dataTable'] = $postsListDataTable->run();
-
-        return do_filter('blog.posts.index.get', $this)->viewAdmin('posts.index');
+            return $next($request);
+        });
     }
 
     /**
-     * Get data for DataTable
-     * @param PostsListDataTable|BaseEngine $postsListDataTable
-     * @return \Illuminate\Http\JsonResponse
+     * @param AbstractDataTables|BaseEngine $dataTables
+     * @return @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function postListing(PostsListDataTable $postsListDataTable)
+    public function getIndex(PostsListDataTable $dataTables)
     {
-        $data = $postsListDataTable->with($this->groupAction());
+        $this->setPageTitle(trans('webed-blog::base.posts.page_title'));
 
-        return do_filter('datatables.blog.posts.index.post', $data, $this);
+        $this->dis['dataTable'] = $dataTables->run();
+
+        return do_filter(BASE_FILTER_CONTROLLER, $this, WEBED_BLOG_POSTS, 'index.get', $dataTables)->viewAdmin('posts.index');
+    }
+
+    /**
+     * @param AbstractDataTables|BaseEngine $dataTables
+     * @return mixed
+     */
+    public function postListing(PostsListDataTable $dataTables)
+    {
+        $data = $dataTables->with($this->groupAction());
+
+        return do_filter(BASE_FILTER_CONTROLLER, $data, WEBED_BLOG_POSTS, 'index.post', $this);
     }
 
     /**
      * Handle group actions
      * @return array
      */
-    private function groupAction()
+    protected function groupAction()
     {
         $data = [];
         if ($this->request->get('customActionType', null) === 'group_action') {
-            if (!$this->userRepository->hasPermission($this->loggedInUser, ['edit-posts'])) {
+            if (!$this->userRepository->hasPermission($this->loggedInUser, ['your-permission'])) {
                 return [
-                    'customActionMessage' => 'You do not have permission',
+                    'customActionMessage' => trans('webed-acl::base.do_not_have_permission'),
                     'customActionStatus' => 'danger',
                 ];
             }
@@ -72,32 +85,33 @@ class PostController extends BaseAdminController
 
             switch ($actionValue) {
                 case 'deleted':
-                    if (!$this->userRepository->hasPermission($this->loggedInUser, ['delete-posts'])) {
+                    if (!$this->userRepository->hasPermission($this->loggedInUser, ['your-permission'])) {
                         return [
-                            'customActionMessage' => 'You do not have permission',
+                            'customActionMessage' => trans('webed-acl::base.do_not_have_permission'),
                             'customActionStatus' => 'danger',
                         ];
                     }
-                    /**
-                     * Delete pages
-                     */
-                    $result = $this->deleteDelete($ids);
+                    $ids = do_filter(BASE_FILTER_BEFORE_DELETE, $ids, WEBED_BLOG_POSTS);
+
+                    $result = $this->repository->deletePost($ids);
+
+                    do_action(BASE_ACTION_AFTER_DELETE, WEBED_BLOG_POSTS, $ids, $result);
                     break;
                 case 'activated':
                 case 'disabled':
                     $result = $this->repository->updateMultiple($ids, [
                         'status' => $actionValue,
-                    ], true);
+                    ]);
                     break;
                 default:
-                    $result = [
-                        'messages' => 'Method not allowed',
-                        'error' => true
+                    return [
+                        'customActionMessage' => trans('webed-core::errors.' . \Constants::METHOD_NOT_ALLOWED . '.message'),
+                        'customActionStatus' => 'danger'
                     ];
                     break;
             }
-            $data['customActionMessage'] = $result['messages'];
-            $data['customActionStatus'] = $result['error'] ? 'danger' : 'success';
+            $data['customActionMessage'] = $result ? trans('webed-core::base.form.request_completed') : trans('webed-core::base.form.error_occurred');
+            $data['customActionStatus'] = !$result ? 'danger' : 'success';
 
         }
         return $data;
@@ -114,141 +128,144 @@ class PostController extends BaseAdminController
         $data = [
             'status' => $status
         ];
-        $result = $this->repository->updatePost($id, $data);
-        return response()->json($result, $result['response_code']);
+        $result = $this->repository->update($id, $data);
+        $msg = $result ? trans('webed-core::base.form.request_completed') : trans('webed-core::base.form.error_occurred');
+        $code = $result ? \Constants::SUCCESS_NO_CONTENT_CODE : \Constants::ERROR_CODE;
+        return response()->json(response_with_messages($msg, !$result, $code), $code);
     }
 
     /**
-     * @param BlogTagRepository $tagRepository
+     * @param BlogTagRepository $blogTagRepository
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function getCreate(BlogTagRepositoryContract $tagRepository)
+    public function getCreate(BlogTagRepositoryContract $blogTagRepository)
     {
+        do_action(BASE_ACTION_BEFORE_CREATE, WEBED_BLOG_POSTS, 'create.get');
+
         $this->assets
             ->addJavascripts([
-                'jquery-ckeditor'
-            ]);
+                'jquery-ckeditor',
+                'jquery-select2'
+            ])
+            ->addStylesheets(['jquery-select2']);
 
-        $this->setPageTitle('Create post');
-        $this->breadcrumbs->addLink('Create post');
+        $this->dis['categories'] = get_categories_with_children();
+        $this->dis['tags'] = $blogTagRepository
+            ->get(['id', 'title'])
+            ->pluck('title', 'id')
+            ->toArray();
 
-        $this->dis['allCategories'] = get_categories_with_children();
+        $this->setPageTitle(trans('webed-blog::base.posts.form.create_post'));
+        $this->breadcrumbs->addLink(trans('webed-blog::base.posts.form.create_post'));
 
-        $this->dis['allTags'] = $tagRepository->get();
-
-        $this->dis['object'] = $this->repository->getModel();
-        $oldInputs = old();
-        if ($oldInputs) {
-            foreach ($oldInputs as $key => $row) {
-                switch ($key) {
-                    case 'categories':
-                        $this->dis['categories'] = $row;
-                        break;
-                    case 'tags':
-                        $this->dis['tags'] = $row;
-                        break;
-                    default:
-                        $this->dis['object']->$key = $row;
-                        break;
-                }
-            }
-        }
-
-        return do_filter('blog.posts.create.get', $this)->viewAdmin('posts.create');
+        return do_filter(BASE_FILTER_CONTROLLER, $this, WEBED_BLOG_POSTS, 'create.get')->viewAdmin('posts.create');
     }
 
     public function postCreate(CreatePostRequest $request)
     {
-        $data = $this->parseInputData();
+        do_action(BASE_ACTION_BEFORE_CREATE, WEBED_BLOG_POSTS, 'create.post');
 
+        $data = $this->parseData($request);
         $data['created_by'] = $this->loggedInUser->id;
 
-        $result = $this->repository->createPost($data);
+        $result = $this->repository->createPost($data, $request->get('categories', []), $request->get('tags', []));
 
-        do_action('blog.posts.after-create.post', null, $result, $this);
+        do_action(BASE_ACTION_AFTER_CREATE, WEBED_BLOG_POSTS, $result);
 
-        $msgType = $result['error'] ? 'danger' : 'success';
+        $msgType = !$result ? 'danger' : 'success';
+        $msg = $result ? trans('webed-core::base.form.request_completed') : trans('webed-core::base.form.error_occurred');
 
-        $this->flashMessagesHelper
-            ->addMessages($result['messages'], $msgType)
+        flash_messages()
+            ->addMessages($msg, $msgType)
             ->showMessagesOnSession();
 
-        if ($result['error']) {
+        if (!$result) {
             return redirect()->back()->withInput();
         }
 
-        if ($request->has('_continue_edit')) {
-            return redirect()->to(route('admin::blog.posts.edit.get', ['id' => $result['data']->id]));
+        if ($this->request->has('_continue_edit')) {
+            return redirect()->to(route('admin::blog.posts.create.get', ['id' => $result]));
         }
 
         return redirect()->to(route('admin::blog.posts.index.get'));
     }
 
     /**
-     * @param BlogTagRepository $tagRepository
-     * @param $id
+     * @param BlogTagRepository $blogTagRepository
+     * @param int $id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
-    public function getEdit(BlogTagRepositoryContract $tagRepository, $id)
+    public function getEdit(BlogTagRepositoryContract $blogTagRepository, $id)
     {
         $item = $this->repository->find($id);
+
         if (!$item) {
-            $this->flashMessagesHelper
-                ->addMessages('This post not exists', 'danger')
+            flash_messages()
+                ->addMessages(trans('webed-blog::base.item_not_exists'), 'danger')
                 ->showMessagesOnSession();
 
             return redirect()->back();
         }
 
-        $item = do_filter('blog.posts.before-edit.get', $item);
+        $item = do_filter(BASE_FILTER_BEFORE_UPDATE, $item, WEBED_BLOG_POSTS, 'edit.get');
 
         $this->assets
             ->addJavascripts([
-                'jquery-ckeditor'
-            ]);
+                'jquery-ckeditor',
+                'jquery-select2'
+            ])
+            ->addStylesheets(['jquery-select2']);
 
-        $this->dis['allCategories'] = get_categories_with_children();
-        $this->dis['categories'] = $this->repository->getRelatedCategoryIds($item);
+        $this->dis['categories'] = get_categories_with_children();
+        $this->dis['selectedCategories'] = $this->repository->getRelatedCategoryIds($item);
 
-        $this->dis['allTags'] = $tagRepository->get();
-        $this->dis['tags'] = $this->repository->getRelatedTagIds($item);
+        $this->dis['tags'] = $blogTagRepository
+            ->get(['id', 'title'])
+            ->pluck('title', 'id')
+            ->toArray();
+        $this->dis['selectedTags'] = $this->repository->getRelatedTagIds($item);
 
-        $this->setPageTitle('Edit post', '#' . $item->id);
-        $this->breadcrumbs->addLink('Edit post');
+        $this->setPageTitle(trans('webed-blog::base.posts.form.edit_item') . ' #' . $item->id);
+        $this->breadcrumbs->addLink(trans('webed-blog::base.posts.form.edit_item'));
 
         $this->dis['object'] = $item;
 
-        return do_filter('blog.posts.edit.get', $this, $id)->viewAdmin('posts.edit');
+        return do_filter(BASE_FILTER_CONTROLLER, $this, WEBED_BLOG_POSTS, 'edit.get', $id)->viewAdmin('posts.edit');
     }
 
+    /**
+     * @param $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function postEdit(UpdatePostRequest $request, $id)
     {
         $item = $this->repository->find($id);
+
         if (!$item) {
-            $this->flashMessagesHelper
-                ->addMessages('This post not exists', 'danger')
+            flash_messages()
+                ->addMessages(trans('webed-blog::base.item_not_exists'), 'danger')
                 ->showMessagesOnSession();
 
             return redirect()->back();
         }
 
-        $item = do_filter('blog.posts.before-edit.post', $item);
+        $item = do_filter(BASE_FILTER_BEFORE_UPDATE, $item, WEBED_BLOG_POSTS, 'edit.post');
 
-        $data = $this->parseInputData();
+        $data = $this->parseData($request);
+        $data['updated_by'] = $this->loggedInUser->id;
 
-        $result = $this->repository->updatePost($item, $data);
+        $result = $this->repository->updatePost($item, $data, $request->get('categories', []), $request->get('tags', []));
 
-        do_action('blog.posts.after-edit.post', $id, $result, $this);
+        do_action(BASE_ACTION_AFTER_UPDATE, WEBED_BLOG_POSTS, $id, $result);
 
-        $msgType = $result['error'] ? 'danger' : 'success';
+        $msgType = !$result ? 'danger' : 'success';
+        $msg = $result ? trans('webed-core::base.form.request_completed') : trans('webed-core::base.form.error_occurred');
 
-        $this->flashMessagesHelper
-            ->addMessages($result['messages'], $msgType)
+        flash_messages()
+            ->addMessages($msg, $msgType)
             ->showMessagesOnSession();
 
-        if ($result['error']) {
-            return redirect()->back();
-        }
-
-        if ($request->has('_continue_edit')) {
+        if ($this->request->has('_continue_edit')) {
             return redirect()->back();
         }
 
@@ -261,32 +278,23 @@ class PostController extends BaseAdminController
      */
     public function deleteDelete($id)
     {
-        $id = do_filter('blog.posts.before-delete.delete', $id);
+        $id = do_filter(BASE_FILTER_BEFORE_DELETE, $id, WEBED_BLOG_POSTS);
 
         $result = $this->repository->delete($id);
 
-        do_action('blog.posts.after-delete.delete', $id, $result, $this);
+        do_action(BASE_ACTION_AFTER_DELETE, WEBED_BLOG_POSTS, $id, $result);
 
-        return response()->json($result, $result['response_code']);
+        $msg = $result ? trans('webed-core::base.form.request_completed') : trans('webed-core::base.form.error_occurred');
+        $code = $result ? \Constants::SUCCESS_NO_CONTENT_CODE : \Constants::ERROR_CODE;
+        return response()->json(response_with_messages($msg, !$result, $code), $code);
     }
 
-    protected function parseInputData()
+    protected function parseData(\WebEd\Base\Http\Requests\Request $request)
     {
-        $data = [
-            'page_template' => $this->request->get('page_template', null),
-            'status' => $this->request->get('status'),
-            'title' => $this->request->get('title'),
-            'slug' => ($this->request->get('slug') ? str_slug($this->request->get('slug')) : str_slug($this->request->get('title'))),
-            'keywords' => $this->request->get('keywords'),
-            'description' => $this->request->get('description'),
-            'content' => $this->request->get('content'),
-            'thumbnail' => $this->request->get('thumbnail'),
-            'order' => $this->request->get('order'),
-            'is_featured' => $this->request->get('is_featured') ?: 0,
-            'updated_by' => $this->loggedInUser->id,
-            'categories' => $this->request->get('categories') ?: [],
-            'tags' => $this->request->get('tags') ?: [],
-        ];
+        $data = $request->get('post');
+        if (!$data['slug']) {
+            $data['slug'] = str_slug($data['title']);
+        }
         return $data;
     }
 }

@@ -1,29 +1,21 @@
 <?php namespace WebEd\Plugins\Blog\Repositories;
 
-use WebEd\Base\Caching\Repositories\Eloquent\EloquentBaseRepositoryCacheDecorator;
+use Illuminate\Support\Collection;
+use WebEd\Base\Repositories\Eloquent\EloquentBaseRepositoryCacheDecorator;
 
 use WebEd\Plugins\Blog\Models\Category;
 use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
+use WebEd\Base\Models\Contracts\BaseModelContract;
 
 class CategoryRepositoryCacheDecorator extends EloquentBaseRepositoryCacheDecorator implements CategoryRepositoryContract
 {
     /**
-     * @param $data
-     * @return array
-     */
-    public function createCategory(array $data)
-    {
-        return $this->afterUpdate(__FUNCTION__, func_get_args());
-    }
-
-    /**
      * @param $id
-     * @param $data
-     * @return array
+     * @return array|null
      */
-    public function updateCategory($id, array $data)
+    public function getAllRelatedChildrenIds($id)
     {
-        return $this->afterUpdate(__FUNCTION__, func_get_args());
+        return $this->beforeGet(__FUNCTION__, func_get_args());
     }
 
     /**
@@ -46,11 +38,49 @@ class CategoryRepositoryCacheDecorator extends EloquentBaseRepositoryCacheDecora
     }
 
     /**
-     * @param $id
-     * @param array $result
-     * @return array|null
+     * @param array $data
+     * @return int
      */
-    public function getAllRelatedChildrenIds($id)
+    public function createCategory(array $data)
+    {
+        return $this->afterUpdate(__FUNCTION__, func_get_args());
+    }
+
+    /**
+     * @param int|null|BaseModelContract $id
+     * @param array $data
+     * @return int
+     */
+    public function createOrUpdateCategory($id, array $data)
+    {
+        return $this->afterUpdate(__FUNCTION__, func_get_args());
+    }
+
+    /**
+     * @param int|null|BaseModelContract $id
+     * @param array $data
+     * @return int
+     */
+    public function updateCategory($id, array $data)
+    {
+        return $this->afterUpdate(__FUNCTION__, func_get_args());
+    }
+
+    /**
+     * @param int|BaseModelContract|array $id
+     * @return bool
+     */
+    public function deleteCategory($id)
+    {
+        return $this->afterUpdate(__FUNCTION__, func_get_args());
+    }
+
+    /**
+     * @param array $select
+     * @param array $orderBy
+     * @return Collection
+     */
+    public function getCategories(array $select, array $orderBy)
     {
         return $this->beforeGet(__FUNCTION__, func_get_args());
     }

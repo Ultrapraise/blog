@@ -1,7 +1,7 @@
 <?php namespace WebEd\Plugins\Blog\Http\Controllers\Front\Api;
 
 use Illuminate\Http\Request;
-use WebEd\Base\Core\Http\Controllers\BaseApiController;
+use WebEd\Base\Http\Controllers\BaseApiController;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 use WebEd\Plugins\Blog\Repositories\PostRepository;
 

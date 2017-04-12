@@ -2,7 +2,7 @@
 
 use WebEd\Base\Users\Models\User;
 use WebEd\Plugins\Blog\Models\Contracts\CategoryModelContract;
-use WebEd\Base\Core\Models\EloquentBase as BaseModel;
+use WebEd\Base\Models\EloquentBase as BaseModel;
 
 class Category extends BaseModel implements CategoryModelContract
 {

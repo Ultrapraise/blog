@@ -1,38 +1,40 @@
 <?php namespace WebEd\Plugins\Blog\Repositories\Contracts;
 
-use WebEd\Plugins\Blog\Models\Category;
+use Illuminate\Support\Collection;
+use WebEd\Base\Models\Contracts\BaseModelContract;
 
 interface CategoryRepositoryContract
 {
     /**
-     * @param $data
-     * @return array
+     * @param array $data
+     * @return int
      */
     public function createCategory(array $data);
 
     /**
-     * @param $id
-     * @param $data
-     * @return array
+     * @param int|null|BaseModelContract $id
+     * @param array $data
+     * @return int
+     */
+    public function createOrUpdateCategory($id, array $data);
+
+    /**
+     * @param int|null|BaseModelContract $id
+     * @param array $data
+     * @return int
      */
     public function updateCategory($id, array $data);
 
     /**
-     * @param $id
-     * @param bool $justId
-     * @return array
+     * @param int|BaseModelContract|array $id
+     * @return bool
      */
-    public function getChildren($id, $justId = true);
+    public function deleteCategory($id);
 
     /**
-     * @param $id
-     * @return Category
+     * @param array $select
+     * @param array $orderBy
+     * @return Collection
      */
-    public function getParent($id);
-
-    /**
-     * @param $id
-     * @return array|null
-     */
-    public function getAllRelatedChildrenIds($id);
+    public function getCategories(array $select, array $orderBy);
 }

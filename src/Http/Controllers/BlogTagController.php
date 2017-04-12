@@ -1,7 +1,9 @@
 <?php namespace WebEd\Plugins\Blog\Http\Controllers;
 
-use WebEd\Base\Core\Http\Controllers\BaseAdminController;
-use WebEd\Plugins\Blog\Http\DataTables\BlogTagsListDataTable;
+use Illuminate\Http\Request;
+use WebEd\Base\Http\Controllers\BaseAdminController;
+use WebEd\Base\Http\DataTables\AbstractDataTables;
+use WebEd\Plugins\Blog\Http\DataTables\TagsListDataTable;
 use WebEd\Plugins\Blog\Http\Requests\CreateBlogTagRequest;
 use WebEd\Plugins\Blog\Http\Requests\UpdateBlogTagRequest;
 use WebEd\Plugins\Blog\Repositories\BlogTagRepository;
@@ -17,54 +19,58 @@ class BlogTagController extends BaseAdminController
      */
     protected $repository;
 
-    /**
-     * @param BlogTagRepository $repository
-     */
     public function __construct(BlogTagRepositoryContract $repository)
     {
         parent::__construct();
 
         $this->repository = $repository;
 
-        $this->breadcrumbs->addLink('Blog')
-            ->addLink('Tags', route('admin::blog.tags.index.get'));
+        $this->middleware(function (Request $request, $next) {
+            $this->getDashboardMenu($this->module . '-tags');
 
-        $this->getDashboardMenu('webed-blog-tags');
-    }
+            $this->breadcrumbs
+                ->addLink(trans('webed-blog::base.page_title'))
+                ->addLink(trans('webed-blog::base.tags.page_title'), route('admin::blog.tags.index.get'));
 
-    public function getIndex(BlogTagsListDataTable $blogTagsListDataTable)
-    {
-        $this->setPageTitle('Tags', 'All available blog tags');
-
-        $this->dis['dataTable'] = $blogTagsListDataTable->run();
-
-        return do_filter('blog.tags.index.get', $this)->viewAdmin('tags.index');
+            return $next($request);
+        });
     }
 
     /**
-     * Get data for DataTable
-     * @param BlogTagsListDataTable|BaseEngine $blogTagsListDataTable
-     * @return \Illuminate\Http\JsonResponse
+     * @param AbstractDataTables|BaseEngine $dataTables
+     * @return @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function postListing(BlogTagsListDataTable $blogTagsListDataTable)
+    public function getIndex(TagsListDataTable $dataTables)
     {
-        $data = $blogTagsListDataTable->with($this->groupAction());
+        $this->setPageTitle(trans('webed-blog::base.tags.page_title'));
 
-        return do_filter('datatables.blog.tags.index.post', $data, $this)
-            ->make(true);
+        $this->dis['dataTable'] = $dataTables->run();
+
+        return do_filter(BASE_FILTER_CONTROLLER, $this, WEBED_BLOG_TAGS, 'index.get', $dataTables)->viewAdmin('tags.index');
+    }
+
+    /**
+     * @param AbstractDataTables|BaseEngine $dataTables
+     * @return mixed
+     */
+    public function postListing(TagsListDataTable $dataTables)
+    {
+        $data = $dataTables->with($this->groupAction());
+
+        return do_filter(BASE_FILTER_CONTROLLER, $data, WEBED_BLOG_TAGS, 'index.post', $this);
     }
 
     /**
      * Handle group actions
      * @return array
      */
-    private function groupAction()
+    protected function groupAction()
     {
         $data = [];
         if ($this->request->get('customActionType', null) === 'group_action') {
             if (!$this->userRepository->hasPermission($this->loggedInUser, ['edit-tags'])) {
                 return [
-                    'customActionMessage' => 'You do not have permission',
+                    'customActionMessage' => trans('webed-acl::base.do_not_have_permission'),
                     'customActionStatus' => 'danger',
                 ];
             }
@@ -76,27 +82,35 @@ class BlogTagController extends BaseAdminController
                 case 'deleted':
                     if (!$this->userRepository->hasPermission($this->loggedInUser, ['delete-tags'])) {
                         return [
-                            'customActionMessage' => 'You do not have permission',
+                            'customActionMessage' => trans('webed-acl::base.do_not_have_permission'),
                             'customActionStatus' => 'danger',
                         ];
                     }
-                    $result = $this->deleteDelete($ids);
+                    /**
+                     * Delete items
+                     */
+                    $ids = do_filter(BASE_FILTER_BEFORE_DELETE, $ids, WEBED_BLOG_TAGS);
+
+                    $result = $this->repository->deleteBlogTag($ids);
+
+                    do_action(BASE_ACTION_AFTER_DELETE, WEBED_BLOG_TAGS, $ids, $result);
                     break;
                 case 'activated':
                 case 'disabled':
                     $result = $this->repository->updateMultiple($ids, [
                         'status' => $actionValue,
-                    ], true);
+                    ]);
                     break;
                 default:
-                    $result = [
-                        'messages' => 'Method not allowed',
-                        'error' => true
+                    return [
+                        'customActionMessage' => trans('webed-core::errors.' . \Constants::METHOD_NOT_ALLOWED . '.message'),
+                        'customActionStatus' => 'danger'
                     ];
                     break;
             }
-            $data['customActionMessage'] = $result['messages'];
-            $data['customActionStatus'] = $result['error'] ? 'danger' : 'success';
+            $data['customActionMessage'] = $result ? trans('webed-core::base.form.request_completed') : trans('webed-core::base.form.error_occurred');
+            $data['customActionStatus'] = !$result ? 'danger' : 'success';
+
         }
         return $data;
     }
@@ -112,8 +126,10 @@ class BlogTagController extends BaseAdminController
         $data = [
             'status' => $status
         ];
-        $result = $this->repository->editWithValidate($id, $data);
-        return response()->json($result, $result['response_code']);
+        $result = $this->repository->update($id, $data);
+        $msg = $result ? trans('webed-core::base.form.request_completed') : trans('webed-core::base.form.error_occurred');
+        $code = $result ? \Constants::SUCCESS_NO_CONTENT_CODE : \Constants::ERROR_CODE;
+        return response()->json(response_with_messages($msg, !$result, $code), $code);
     }
 
     /**
@@ -121,102 +137,109 @@ class BlogTagController extends BaseAdminController
      */
     public function getCreate()
     {
-        $this->setPageTitle('Create tag');
-        $this->breadcrumbs->addLink('Create tag');
-
-        $this->dis['object'] = $this->repository->getModel();
-
-        $oldInputs = old();
-        if ($oldInputs) {
-            foreach ($oldInputs as $key => $row) {
-                $this->dis['object']->$key = $row;
-            }
-        }
-
-        return do_filter('blog.tags.create.get', $this)->viewAdmin('tags.create');
-    }
-
-    public function postCreate(CreateBlogTagRequest $request)
-    {
-        $data = $this->parseInputData();
-
-        $data['created_by'] = $this->loggedInUser->id;
-
-        $result = $this->repository->createTag($data);
-
-        do_action('blog.tags.after-create.post', null, $result, $this);
-
-        $msgType = $result['error'] ? 'danger' : 'success';
-
-        $this->flashMessagesHelper
-            ->addMessages($result['messages'], $msgType)
-            ->showMessagesOnSession();
-
-        if ($result['error']) {
-            return redirect()->back()->withInput();
-        }
-
-        if ($request->has('_continue_edit')) {
-            if (!$result['error']) {
-                return redirect()->to(route('admin::blog.tags.edit.get', ['id' => $result['data']->id]));
-            }
-        }
-
-        return redirect()->to(route('admin::blog.tags.index.get'));
-    }
-
-    public function getEdit($id)
-    {
-        $item = $this->repository->find($id);
-        if (!$item) {
-            $this->flashMessagesHelper
-                ->addMessages('This tag not exists', 'danger')
-                ->showMessagesOnSession();
-
-            return redirect()->back();
-        }
-
-        $item = do_filter('blog.tags.before-edit.get', $item);
+        do_action(BASE_ACTION_BEFORE_CREATE, WEBED_BLOG_TAGS, 'create.get');
 
         $this->assets
             ->addJavascripts([
                 'jquery-ckeditor'
             ]);
 
-        $this->setPageTitle('Edit tag', $item->title);
-        $this->breadcrumbs->addLink('Edit tag');
+        $this->setPageTitle(trans('webed-blog::base.tags.form.create_tag'));
+        $this->breadcrumbs->addLink(trans('webed-blog::base.tags.form.create_tag'));
 
-        $this->dis['object'] = $item;
-
-        return do_filter('blog.tags.edit.get', $this, $id)->viewAdmin('tags.edit');
+        return do_filter(BASE_FILTER_CONTROLLER, $this, WEBED_BLOG_TAGS, 'create.get')->viewAdmin('tags.create');
     }
 
-    public function postEdit(UpdateBlogTagRequest $request, $id)
+    public function postCreate(CreateBlogTagRequest $request)
+    {
+        do_action(BASE_ACTION_BEFORE_CREATE, WEBED_BLOG_TAGS, 'create.post');
+
+        $data = $request->get('tag', []);
+        $data['created_by'] = $this->loggedInUser->id;
+
+        $result = $this->repository->createBlogTag($data);
+
+        do_action(BASE_ACTION_AFTER_CREATE, WEBED_BLOG_TAGS, $result);
+
+        $msgType = !$result ? 'danger' : 'success';
+        $msg = $result ? trans('webed-core::base.form.request_completed') : trans('webed-core::base.form.error_occurred');
+
+        flash_messages()
+            ->addMessages($msg, $msgType)
+            ->showMessagesOnSession();
+
+        if (!$result) {
+            return redirect()->back()->withInput();
+        }
+
+        if ($this->request->has('_continue_edit')) {
+            return redirect()->to(route('admin::blog.tags.edit.get', ['id' => $result]));
+        }
+
+        return redirect()->to(route('admin::blog.tags.index.get'));
+    }
+
+    /**
+     * @param $id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\RedirectResponse|\Illuminate\View\View
+     */
+    public function getEdit($id)
     {
         $item = $this->repository->find($id);
+
         if (!$item) {
-            $this->flashMessagesHelper
-                ->addMessages('This tag not exists', 'danger')
+            flash_messages()
+                ->addMessages(trans('webed-blog::base.item_not_exists'), 'danger')
                 ->showMessagesOnSession();
 
             return redirect()->back();
         }
 
-        $item = do_filter('blog.tags.before-edit.post', $item);
+        $item = do_filter(BASE_FILTER_BEFORE_UPDATE, $item, WEBED_BLOG_TAGS, 'edit.get');
 
-        $data = $this->parseInputData();
+        $this->assets
+            ->addJavascripts([
+                'jquery-ckeditor'
+            ]);
 
-        $result = $this->repository->updateTag($item, $data);
+        $this->setPageTitle(trans('webed-blog::base.tags.edit_item') . ' #' . $item->id);
+        $this->breadcrumbs->addLink(trans('webed-blog::base.tags.edit_item'));
 
-        do_action('blog.tags.after-edit.post', $id, $result, $this);
+        $this->dis['object'] = $item;
 
-        $msgType = $result['error'] ? 'danger' : 'success';
+        return do_filter(BASE_FILTER_CONTROLLER, $this, WEBED_BLOG_TAGS, 'edit.get', $id)->viewAdmin('tags.edit');
+    }
 
-        $this->flashMessagesHelper
-            ->addMessages($result['messages'], $msgType)
+    /**
+     * @param $id
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function postEdit(UpdateBlogTagRequest $request, $id)
+    {
+        $item = $this->repository->find($id);
+
+        if (!$item) {
+            flash_messages()
+                ->addMessages(trans('webed-blog::base.item_not_exists'), 'danger')
+                ->showMessagesOnSession();
+
+            return redirect()->back();
+        }
+
+        $item = do_filter(BASE_FILTER_BEFORE_UPDATE, $item, WEBED_BLOG_TAGS, 'edit.post');
+
+        $result = $this->repository->updateBlogTag($item, $request->all());
+
+        do_action(BASE_ACTION_AFTER_UPDATE, WEBED_BLOG_TAGS, $id, $result);
+
+        $msgType = !$result ? 'danger' : 'success';
+        $msg = $result ? trans('webed-core::base.form.request_completed') : trans('webed-core::base.form.error_occurred');
+
+        flash_messages()
+            ->addMessages($msg, $msgType)
             ->showMessagesOnSession();
 
-        if ($request->has('_continue_edit')) {
+        if ($this->request->has('_continue_edit')) {
             return redirect()->back();
         }
 
@@ -229,25 +252,14 @@ class BlogTagController extends BaseAdminController
      */
     public function deleteDelete($id)
     {
-        $id = do_filter('blog.tags.before-delete.delete', $id);
+        $id = do_filter(BASE_FILTER_BEFORE_DELETE, $id, WEBED_BLOG_TAGS);
 
-        $result = $this->repository->delete($id);
+        $result = $this->repository->deleteBlogTag($id);
 
-        do_action('blog.tags.after-delete.delete', $id, $result, $this);
+        do_action(BASE_ACTION_AFTER_DELETE, WEBED_BLOG_TAGS, $id, $result);
 
-        return response()->json($result, $result['response_code']);
-    }
-
-    protected function parseInputData()
-    {
-        $data = [
-            'status' => $this->request->get('status'),
-            'title' => $this->request->get('title'),
-            'slug' => ($this->request->get('slug') ? str_slug($this->request->get('slug')) : str_slug($this->request->get('title'))),
-            'description' => $this->request->get('description'),
-            'order' => $this->request->get('order'),
-            'updated_by' => $this->loggedInUser->id,
-        ];
-        return $data;
+        $msg = $result ? trans('webed-core::base.form.request_completed') : trans('webed-core::base.form.error_occurred');
+        $code = $result ? \Constants::SUCCESS_NO_CONTENT_CODE : \Constants::ERROR_CODE;
+        return response()->json(response_with_messages($msg, !$result, $code), $code);
     }
 }

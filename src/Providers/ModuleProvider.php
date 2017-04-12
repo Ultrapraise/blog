@@ -1,6 +1,7 @@
 <?php namespace WebEd\Plugins\Blog\Providers;
 
-use Illuminate\Database\Schema\Blueprint;
+use WebEd\Plugins\Blog\Http\Middleware\BootstrapModuleMiddleware;
+use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 
 class ModuleProvider extends ServiceProvider
@@ -28,6 +29,16 @@ class ModuleProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../../database' => base_path('database'),
         ], 'migrations');
+        $this->publishes([
+            __DIR__ . '/../../resources/assets' => resource_path('assets'),
+        ], 'webed-assets');
+        $this->publishes([
+            __DIR__ . '/../../resources/public' => public_path(),
+        ], 'webed-public-assets');
+
+        app()->booted(function () {
+            $this->app->register(BootstrapModuleServiceProvider::class);
+        });
     }
 
     /**
@@ -47,9 +58,14 @@ class ModuleProvider extends ServiceProvider
             $this->mergeConfigFrom($row, $key);
         }
 
+        $this->app->register(HookServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);
         $this->app->register(RepositoryServiceProvider::class);
-        $this->app->register(HookServiceProvider::class);
-        $this->app->register(BootstrapModuleServiceProvider::class);
+
+        /**
+         * @var Router $router
+         */
+        $router = $this->app['router'];
+        $router->pushMiddlewareToGroup('web', BootstrapModuleMiddleware::class);
     }
 }

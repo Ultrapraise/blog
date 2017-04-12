@@ -16,18 +16,6 @@ use WebEd\Plugins\Blog\Repositories\PostRepositoryCacheDecorator;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
-    protected $module = 'WebEd\Plugins\Blog';
-
-    /**
-     * Bootstrap the application services.
-     *
-     * @return void
-     */
-    public function boot()
-    {
-
-    }
-
     /**
      * Register the application services.
      *
@@ -39,7 +27,7 @@ class RepositoryServiceProvider extends ServiceProvider
             $repository = new PostRepository(new Post());
 
             if (config('webed-caching.repository.enabled')) {
-                return new PostRepositoryCacheDecorator($repository);
+                return new PostRepositoryCacheDecorator($repository, WEBED_BLOG_GROUP_CACHE_KEY);
             }
 
             return $repository;
@@ -49,7 +37,7 @@ class RepositoryServiceProvider extends ServiceProvider
             $repository = new CategoryRepository(new Category());
 
             if (config('webed-caching.repository.enabled')) {
-                return new CategoryRepositoryCacheDecorator($repository);
+                return new CategoryRepositoryCacheDecorator($repository, WEBED_BLOG_GROUP_CACHE_KEY);
             }
 
             return $repository;
@@ -59,7 +47,7 @@ class RepositoryServiceProvider extends ServiceProvider
             $repository = new BlogTagRepository(new BlogTag());
 
             if (config('webed-caching.repository.enabled')) {
-                return new BlogTagRepositoryCacheDecorator($repository);
+                return new BlogTagRepositoryCacheDecorator($repository, WEBED_BLOG_GROUP_CACHE_KEY);
             }
 
             return $repository;

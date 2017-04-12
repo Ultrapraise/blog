@@ -1,12 +1,11 @@
 <?php namespace WebEd\Plugins\Blog\Repositories;
 
+use Illuminate\Support\Collection;
+use WebEd\Base\Models\Contracts\BaseModelContract;
+use WebEd\Base\Repositories\Eloquent\EloquentBaseRepository;
 use WebEd\Base\Caching\Services\Traits\Cacheable;
-use WebEd\Base\Core\Repositories\Eloquent\EloquentBaseRepository;
 use WebEd\Base\Caching\Services\Contracts\CacheableContract;
 
-use WebEd\Plugins\Blog\Criterias\Filter\WherePostBelongsToCategories;
-use WebEd\Plugins\Blog\Criterias\Filter\WherePostBelongsToTags;
-use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
 use WebEd\Plugins\Blog\Models\Post;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;
 
@@ -14,155 +13,183 @@ class PostRepository extends EloquentBaseRepository implements PostRepositoryCon
 {
     use Cacheable;
 
-    protected $rules = [
-        'page_template' => 'string|max:255|nullable',
-        'title' => 'string|max:255|required',
-        'slug' => 'string|max:255|alpha_dash|unique:posts',
-        'description' => 'string|max:1000|nullable',
-        'content' => 'string|nullable',
-        'thumbnail' => 'string|max:255|nullable',
-        'keywords' => 'string|max:255|nullable',
-        'status' => 'string|required|in:activated,disabled',
-        'order' => 'integer|min:0',
-        'is_featured' => 'integer|in:0,1',
-        'created_by' => 'integer|min:0|required',
-        'updated_by' => 'integer|min:0|required',
-    ];
-
-    protected $editableFields = [
-        'title',
-        'page_template',
-        'slug',
-        'description',
-        'content',
-        'thumbnail',
-        'keywords',
-        'status',
-        'order',
-        'is_featured',
-        'created_by',
-        'updated_by',
-    ];
-
     /**
      * @param array $data
-     * @return array
+     * @param array|null $categories
+     * @param array|null $tags
+     * @return int|null
      */
-    public function createPost($data)
+    public function createPost(array $data, array $categories = null, array $tags = null)
     {
-        return $this->updatePost(0, $data, true, true);
-    }
-
-    /**
-     * @param $id
-     * @param $data
-     * @param bool $allowCreateNew
-     * @param bool $justUpdateSomeFields
-     * @return array
-     */
-    public function updatePost($id, $data, $allowCreateNew = false, $justUpdateSomeFields = true)
-    {
-        return $this->_updatePost($id, $data, $allowCreateNew, $justUpdateSomeFields);
-    }
-
-    private function _updatePost($id, $data, $allowCreateNew = false, $justUpdateSomeFields = true)
-    {
-        if (!$allowCreateNew) {
-            $this->unsetEditableFields('created_by');
+        $result = $this->create($data);
+        if ($result) {
+            if ($categories !== null) {
+                $this->syncCategories($result, $categories);
+            }
+            if ($tags !== null) {
+                $this->syncTags($result, $tags);
+            }
         }
-
-        $categories = array_get($data, 'categories', null);
-
-        if ($categories !== null) {
-            unset($data['categories']);
-        }
-
-        $tags = array_get($data, 'tags', null);
-
-        if ($tags !== null) {
-            unset($data['tags']);
-        }
-
-        $result = $this->editWithValidate($id, $data, $allowCreateNew, $justUpdateSomeFields);
-
-        if ($result['error']) {
-            return $result;
-        }
-
-        $resultSync = $this->syncCategories($result['data'], $categories);
-        if ($resultSync !== null) {
-            $result['messages'][] = $resultSync;
-        }
-
-        $resultSyncTags = $this->syncTags($result['data'], $tags);
-        if ($resultSyncTags !== null) {
-            $result['messages'][] = $resultSyncTags;
-        }
-
         return $result;
     }
 
     /**
-     * @param PostModelContract $model
+     * @param int|null|Post $id
+     * @param array $data
+     * @param array|null $categories
+     * @param array|null $tags
+     * @return int|null
+     */
+    public function createOrUpdatePost($id, array $data, array $categories = null, array $tags = null)
+    {
+        $result = $this->createOrUpdate($id, $data);
+        if ($result) {
+            if ($categories !== null) {
+                $this->syncCategories($result, $categories);
+            }
+            if ($tags !== null) {
+                $this->syncTags($result, $tags);
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * @param int|null|Post $id
+     * @param array $data
+     * @return int
+     */
+    public function updatePost($id, array $data, array $categories = null, array $tags = null)
+    {
+        $result = $this->update($id, $data);
+        if ($result) {
+            if ($categories !== null) {
+                $this->syncCategories($result, $categories);
+            }
+            if ($tags !== null) {
+                $this->syncTags($result, $tags);
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * @param int|Post|array $id
+     * @return bool
+     */
+    public function deletePost($id)
+    {
+        return $this->delete($id);
+    }
+
+    /**
+     * @param Post|int $model
      * @param array $categories
+     * @return bool|null
      */
-    public function syncCategories($model, $categories = null)
+    public function syncCategories($model, array $categories)
     {
-        if ($categories === null) {
-            return null;
-        }
+        $model = $model instanceof Post ? $model : $this->find($model);
 
         try {
-            $model->categories()->sync((array)$categories);
-            $message = 'Sync categories completed.';
+            $model->categories()->sync($categories);
+            return true;
         } catch (\Exception $exception) {
-            $message = 'Some error occurred when sync categories.';
+            return false;
         }
-        return $message;
     }
 
     /**
-     * @param Post $post
+     * @param Post|int $model
      * @return array
      */
-    public function getRelatedCategoryIds(PostModelContract $post)
+    public function getRelatedCategoryIds($model)
     {
+        $model = $model instanceof Post ? $model : $this->find($model);
+
         try {
-            return $post->categories()->allRelatedIds()->toArray();
+            return $model->categories()->allRelatedIds()->toArray();
         } catch (\Exception $exception) {
             return [];
         }
     }
 
     /**
-     * @param Post $model
+     * @param Post|int $model
      * @param array $tags
+     * @return bool|null
      */
-    public function syncTags($model, $tags = null)
+    public function syncTags($model, array $tags)
     {
-        if ($tags === null) {
-            return null;
-        }
+        $model = $model instanceof Post ? $model : $this->find($model);
 
         try {
-            $model->tags()->sync((array)$tags);
-            $message = 'Sync tags completed.';
+            $model->tags()->sync($tags);
+            return true;
         } catch (\Exception $exception) {
-            $message = 'Some error occurred when sync tags.';
+            return false;
         }
-        return $message;
     }
 
     /**
-     * @param Post $post
+     * @param Post|int $model
      * @return array
      */
-    public function getRelatedTagIds(PostModelContract $post)
+    public function getRelatedTagIds($model)
     {
+        $model = $model instanceof Post ? $model : $this->find($model);
+
         try {
-            return $post->tags()->allRelatedIds()->toArray();
+            return $model->tags()->allRelatedIds()->toArray();
         } catch (\Exception $exception) {
             return [];
         }
+    }
+
+    /**
+     * @param array|int $categoryId
+     * @param array $params
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator|\Illuminate\Database\Eloquent\Collection|Collection
+     */
+    public function getPostsByCategory($categoryId, array $params = [])
+    {
+        $params = array_merge([
+            'status' => 'activated',
+            'take' => null,
+            'per_page' => 0,
+            'current_paged' => 1,
+            'order_by' => [
+                'posts.order' => 'ASC'
+            ],
+            'select' => [
+                'posts.id', 'posts.title', 'posts.slug', 'posts.created_at', 'posts.updated_at',
+                'posts.content', 'posts.description', 'posts.keywords', 'posts.order', 'posts.thumbnail'
+            ],
+            'group_by' => [
+                'posts.id', 'posts.title', 'posts.slug', 'posts.created_at', 'posts.updated_at',
+                'posts.content', 'posts.description', 'posts.keywords', 'posts.order', 'posts.thumbnail'
+            ]
+        ], $params);
+
+        $result = $this->model
+            ->join('posts_categories', 'posts.id', '=', 'posts_categories.post_id')
+            ->join('categories', 'categories.id', '=', 'posts_categories.category_id')
+            ->whereIn('categories.id', $categoryId)
+            ->distinct()
+            ->groupBy($params['groupBy']);
+
+        foreach ($params['order_by'] as $by => $direction) {
+            $result = $result->orderby($by, $direction);
+        }
+
+        if ($params['take']) {
+            return $result->take($params['take'])->get();
+        }
+
+        if ($params['per_page']) {
+            return $result->paginate($params['per_page'], ['*'], 'page', $params['current_paged']);
+        }
+
+        return $result->get();
     }
 }

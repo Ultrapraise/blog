@@ -1,9 +1,10 @@
 {
     "alias": "webed-blog",
-    "name": "Blog",
+    "name": "Blog plugin for WebEd 3.1",
     "author": "Tedozi Manson",
-    "description": "Blog management package.",
+    "description": "Blog plugin for WebEd 3.1",
     "namespace": "WebEd\\Plugins\\Blog",
-    "version": "3.0.4",
-    "autoload": "psr-4"
+    "version": "3.1.2",
+    "autoload": "psr-4",
+    "require": {}
 }

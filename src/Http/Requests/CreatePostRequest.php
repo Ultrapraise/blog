@@ -1,19 +1,22 @@
 <?php namespace WebEd\Plugins\Blog\Http\Requests;
 
-use WebEd\Base\Core\Http\Requests\Request;
+use WebEd\Base\Http\Requests\Request;
 
 class CreatePostRequest extends Request
 {
-    public $rules = [
-        'page_template' => 'string|max:255|nullable',
-        'title' => 'string|max:255|required',
-        'slug' => 'string|max:255|nullable',
-        'description' => 'string|max:1000|nullable',
-        'content' => 'string|nullable',
-        'thumbnail' => 'string|max:255|nullable',
-        'keywords' => 'string|max:255|nullable',
-        'status' => 'string|required|in:activated,disabled',
-        'order' => 'integer|min:0',
-        'is_featured' => 'integer|in:0,1',
-    ];
+    public function rules()
+    {
+        return [
+            'post.page_template' => 'string|max:255|nullable',
+            'post.title' => 'string|max:255|required',
+            'post.slug' => 'string|max:255|unique:posts,slug|nullable',
+            'post.description' => 'string|max:1000|nullable',
+            'post.content' => 'string|nullable',
+            'post.thumbnail' => 'string|max:255|nullable',
+            'post.keywords' => 'string|max:255|nullable',
+            'post.status' => 'string|required|in:activated,disabled',
+            'post.order' => 'integer|min:0',
+            'post.is_featured' => 'integer|in:0,1',
+        ];
+    }
 }

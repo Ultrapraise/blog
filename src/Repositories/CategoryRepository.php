@@ -1,65 +1,45 @@
 <?php namespace WebEd\Plugins\Blog\Repositories;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+use WebEd\Base\Models\Contracts\BaseModelContract;
+use WebEd\Base\Repositories\Eloquent\EloquentBaseRepository;
 use WebEd\Base\Caching\Services\Traits\Cacheable;
-use WebEd\Base\Core\Repositories\Eloquent\EloquentBaseRepository;
 use WebEd\Base\Caching\Services\Contracts\CacheableContract;
-
 use WebEd\Plugins\Blog\Models\Category;
-use WebEd\Plugins\Blog\Models\Contracts\CategoryModelContract;
 use WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract;
 
+/**
+ * @property Category|Builder $model
+ */
 class CategoryRepository extends EloquentBaseRepository implements CategoryRepositoryContract, CacheableContract
 {
     use Cacheable;
 
-    protected $rules = [
-        'parent_id' => 'integer|min:0|nullable',
-        'page_template' => 'string|max:255|nullable',
-        'title' => 'string|max:255|required',
-        'slug' => 'string|max:255|alpha_dash|unique:categories',
-        'description' => 'string|max:1000|nullable',
-        'content' => 'string|nullable',
-        'thumbnail' => 'string|max:255|nullable',
-        'keywords' => 'string|max:255|nullable',
-        'status' => 'string|required|in:activated,disabled',
-        'order' => 'integer|min:0',
-        'created_by' => 'integer|min:0|required',
-        'updated_by' => 'integer|min:0|required',
-    ];
-
-    protected $editableFields = [
-        'parent_id',
-        'title',
-        'page_template',
-        'slug',
-        'description',
-        'content',
-        'thumbnail',
-        'keywords',
-        'status',
-        'order',
-        'created_by',
-        'updated_by',
-    ];
-
-    /**
-     * @param $data
-     * @return array
-     */
-    public function createCategory(array $data)
-    {
-        return $this->editWithValidate(0, $data, true);
-    }
-
     /**
      * @param $id
-     * @param $data
-     * @return array
+     * @return array|null
      */
-    public function updateCategory($id, array $data)
+    public function getAllRelatedChildrenIds($id)
     {
-        $this->unsetEditableFields('created_by');
-        return $this->editWithValidate($id, $data, false, true);
+        if ($id instanceof Category) {
+            $model = $id;
+        } else {
+            $model = $this->find($id);
+        }
+        if (!$model) {
+            return null;
+        }
+
+        $result = [];
+
+        $children = $model->children()->select('id')->get();
+
+        foreach ($children as $child) {
+            $result[] = $child->id;
+            $result = array_merge($this->getAllRelatedChildrenIds($child), $result);
+        }
+        return array_unique($result);
     }
 
     /**
@@ -69,7 +49,7 @@ class CategoryRepository extends EloquentBaseRepository implements CategoryRepos
      */
     public function getChildren($id, $justId = true)
     {
-        if ($id instanceof CategoryModelContract) {
+        if ($id instanceof Category) {
             $model = $id;
         } else {
             $model = $this->find($id);
@@ -79,15 +59,15 @@ class CategoryRepository extends EloquentBaseRepository implements CategoryRepos
         }
 
         $children = $model->children();
-        if ($justId === true) {
-            $result = [];
-            $children = $children->select('id')->get();
-            foreach ($children as $child) {
-                $result[] = $child->id;
-            }
-            return $result;
+        if ($justId) {
+            return $children->select('id')->get()->pluck('id');
         }
-        return $children->get();
+        $children = $children->get();
+        $result = [];
+        foreach ($children as $child) {
+            $result[] = $child;
+        }
+        return $result;
     }
 
     /**
@@ -96,7 +76,7 @@ class CategoryRepository extends EloquentBaseRepository implements CategoryRepos
      */
     public function getParent($id)
     {
-        if ($id instanceof CategoryModelContract) {
+        if ($id instanceof Category) {
             $model = $id;
         } else {
             $model = $this->find($id);
@@ -109,28 +89,56 @@ class CategoryRepository extends EloquentBaseRepository implements CategoryRepos
     }
 
     /**
-     * @param $id
-     * @return array|null
+     * @param array $data
+     * @return int
      */
-    public function getAllRelatedChildrenIds($id)
+    public function createCategory(array $data)
     {
-        if ($id instanceof CategoryModelContract) {
-            $model = $id;
-        } else {
-            $model = $this->find($id);
-        }
-        if (!$model) {
-            return null;
-        }
+        return $this->create($data);
+    }
 
-        $result = [];
+    /**
+     * @param int|null|BaseModelContract $id
+     * @param array $data
+     * @return int
+     */
+    public function createOrUpdateCategory($id, array $data)
+    {
+        return $this->createOrUpdate($id, $data);
+    }
 
-        $children = $model->children();
-        $children = $children->select('id')->get();
-        foreach ($children as $child) {
-            $result[] = $child->id;
-            $result = array_merge($this->getAllRelatedChildrenIds($child), $result);
+    /**
+     * @param int|null|BaseModelContract $id
+     * @param array $data
+     * @return int
+     */
+    public function updateCategory($id, array $data)
+    {
+        return $this->update($id, $data);
+    }
+
+    /**
+     * @param int|BaseModelContract|array $id
+     * @return bool
+     */
+    public function deleteCategory($id)
+    {
+        return $this->delete($id);
+    }
+
+    /**
+     * @param array $select
+     * @param array $orderBy
+     * @return Collection
+     */
+    public function getCategories(array $select, array $orderBy)
+    {
+        $model = $this->model->select($select);
+        foreach ($orderBy as $by => $direction) {
+            $model = $this->model->orderBy($by, $direction);
         }
-        return array_unique($result);
+        $model = $model->get();
+        $this->resetModel();
+        return $model;
     }
 }

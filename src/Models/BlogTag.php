@@ -2,7 +2,7 @@
 
 use WebEd\Base\Users\Models\User;
 use WebEd\Plugins\Blog\Models\Contracts\BlogTagModelContract;
-use WebEd\Base\Core\Models\EloquentBase as BaseModel;
+use WebEd\Base\Models\EloquentBase as BaseModel;
 
 class BlogTag extends BaseModel implements BlogTagModelContract
 {
@@ -10,7 +10,15 @@ class BlogTag extends BaseModel implements BlogTagModelContract
 
     protected $primaryKey = 'id';
 
-    protected $fillable = [];
+    protected $fillable = [
+        'title',
+        'slug',
+        'description',
+        'status',
+        'order',
+        'created_by',
+        'updated_by',
+    ];
 
     public $timestamps = true;
 

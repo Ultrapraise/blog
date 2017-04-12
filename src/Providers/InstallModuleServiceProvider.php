@@ -8,6 +8,8 @@ class InstallModuleServiceProvider extends ServiceProvider
 {
     protected $module = 'WebEd\Plugins\Blog';
 
+    protected $moduleAlias = 'webed-blog';
+
     /**
      * Bootstrap the application services.
      *
@@ -35,41 +37,22 @@ class InstallModuleServiceProvider extends ServiceProvider
         $this->createSchema();
 
         acl_permission()
-            ->registerPermission('View posts', 'view-posts', $this->module)
-            ->registerPermission('Create posts', 'create-posts', $this->module)
-            ->registerPermission('Update posts', 'update-posts', $this->module)
-            ->registerPermission('Delete posts', 'delete-posts', $this->module)
-            ->registerPermission('View categories', 'view-categories', $this->module)
-            ->registerPermission('Create categories', 'create-categories', $this->module)
-            ->registerPermission('Update categories', 'update-categories', $this->module)
-            ->registerPermission('Delete categories', 'delete-categories', $this->module);
+            ->registerPermission('View posts', 'view-posts', $this->moduleAlias)
+            ->registerPermission('Create posts', 'create-posts', $this->moduleAlias)
+            ->registerPermission('Update posts', 'update-posts', $this->moduleAlias)
+            ->registerPermission('Delete posts', 'delete-posts', $this->moduleAlias)
+            ->registerPermission('View categories', 'view-categories', $this->moduleAlias)
+            ->registerPermission('Create categories', 'create-categories', $this->moduleAlias)
+            ->registerPermission('Update categories', 'update-categories', $this->moduleAlias)
+            ->registerPermission('Delete categories', 'delete-categories', $this->moduleAlias)
+            ->registerPermission('View tags', 'view-tags', $this->moduleAlias)
+            ->registerPermission('Create tags', 'create-tags', $this->moduleAlias)
+            ->registerPermission('Update tags', 'update-tags', $this->moduleAlias)
+            ->registerPermission('Delete tags', 'delete-tags', $this->moduleAlias);
     }
 
     private function createSchema()
     {
-        /**
-         * Create table posts
-         */
-        Schema::create('posts', function (Blueprint $table) {
-            $table->engine = 'InnoDB';
-            $table->increments('id');
-            $table->string('title');
-            $table->string('page_template', 255)->nullable();
-            $table->string('slug', 255)->nullable();
-            $table->text('description')->nullable();
-            $table->text('content')->nullable();
-            $table->string('thumbnail', 255)->nullable();
-            $table->string('keywords', 255)->nullable();
-            $table->integer('order')->default(0);
-            $table->enum('status', ['activated', 'disabled'])->default('activated');
-            $table->tinyInteger('is_featured')->default(0);
-            $table->integer('created_by')->unsigned()->nullable();
-            $table->integer('updated_by')->unsigned()->nullable();
-            $table->timestamps();
-            $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
-            $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
-        });
-
         /**
          * Create table categories
          */
@@ -95,6 +78,31 @@ class InstallModuleServiceProvider extends ServiceProvider
         });
 
         /**
+         * Create table posts
+         */
+        Schema::create('posts', function (Blueprint $table) {
+            $table->engine = 'InnoDB';
+            $table->increments('id');
+            $table->string('title');
+            $table->string('page_template', 255)->nullable();
+            $table->string('slug', 255)->nullable();
+            $table->text('description')->nullable();
+            $table->text('content')->nullable();
+            $table->string('thumbnail', 255)->nullable();
+            $table->string('keywords', 255)->nullable();
+            $table->integer('order')->default(0);
+            $table->enum('status', ['activated', 'disabled'])->default('activated');
+            $table->integer('category_id')->unsigned()->nullable();
+            $table->tinyInteger('is_featured')->default(0);
+            $table->integer('created_by')->unsigned()->nullable();
+            $table->integer('updated_by')->unsigned()->nullable();
+            $table->timestamps();
+            $table->foreign('category_id')->references('id')->on('categories')->onDelete('set null');
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
+        });
+
+        /**
          * Create mapper table for categories and posts
          */
         Schema::create('posts_categories', function (Blueprint $table) {
@@ -114,7 +122,6 @@ class InstallModuleServiceProvider extends ServiceProvider
             $table->increments('id');
             $table->string('title');
             $table->string('slug', 255)->nullable();
-            $table->text('description')->nullable();
             $table->enum('status', ['activated', 'disabled'])->default('activated');
             $table->integer('order')->default(0);
             $table->integer('created_by')->unsigned()->nullable();

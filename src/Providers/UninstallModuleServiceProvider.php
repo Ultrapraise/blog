@@ -7,6 +7,8 @@ class UninstallModuleServiceProvider extends ServiceProvider
 {
     protected $module = 'WebEd\Plugins\Blog';
 
+    protected $moduleAlias = 'blog';
+
     /**
      * Bootstrap the application services.
      *
@@ -29,7 +31,7 @@ class UninstallModuleServiceProvider extends ServiceProvider
 
     }
 
-    private function booted()
+    protected function booted()
     {
         acl_permission()
             ->unsetPermissionByModule($this->module);
@@ -37,12 +39,12 @@ class UninstallModuleServiceProvider extends ServiceProvider
         $this->dropSchema();
     }
 
-    private function dropSchema()
+    protected function dropSchema()
     {
         Schema::dropIfExists('posts_categories');
         Schema::dropIfExists('posts_tags');
         Schema::dropIfExists('blog_tags');
-        Schema::dropIfExists('categories');
         Schema::dropIfExists('posts');
+        Schema::dropIfExists('categories');
     }
 }

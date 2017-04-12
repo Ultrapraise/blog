@@ -1,6 +1,6 @@
 <?php namespace WebEd\Plugins\Blog\Http\Controllers\Front;
 
-use WebEd\Base\Core\Http\Controllers\BaseFrontController;
+use WebEd\Base\Http\Controllers\BaseFrontController;
 use WebEd\Plugins\Blog\Models\Contracts\PostModelContract;
 use WebEd\Plugins\Blog\Models\Post;
 use WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract;

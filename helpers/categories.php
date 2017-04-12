@@ -1,5 +1,19 @@
 <?php
 
+use WebEd\Plugins\Blog\Models\Category;
+use WebEd\Plugins\Blog\Models\Contracts\CategoryModelContract;
+
+if (!function_exists('get_category_link')) {
+    /**
+     * @param Category $category
+     * @return string
+     */
+    function get_category_link(CategoryModelContract $category)
+    {
+        return route('front.web.resolve-blog.get', ['slug' => $category->slug]);
+    }
+}
+
 if (!function_exists('get_categories')) {
     /**
      * @param array $args
@@ -14,12 +28,10 @@ if (!function_exists('get_categories')) {
          * @var \WebEd\Plugins\Blog\Repositories\CategoryRepository $repo
          */
         $repo = app(\WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract::class);
-        $categories = $repo
-            ->orderBy('order', 'ASC')
-            ->orderBy('created_at', 'DESC')
-            ->select(array_get($args, 'select', ['*']))
-            ->get();
-
+        $categories = $repo->getCategories(array_get($args, 'select', ['*']), [
+            'order' => 'ASC',
+            'created_at' => 'DESC'
+        ]);
         $categories = sort_item_with_children($categories);
 
         foreach ($categories as $category) {
@@ -45,67 +57,16 @@ if (!function_exists('get_categories_with_children')) {
          * @var \WebEd\Plugins\Blog\Repositories\CategoryRepository $repo
          */
         $repo = app(\WebEd\Plugins\Blog\Repositories\Contracts\CategoryRepositoryContract::class);
-        $categories = $repo
-            ->orderBy('order', 'ASC')
-            ->orderBy('created_at', 'DESC')
-            ->get();
+        $categories = $repo->get();
 
         /**
-         * @var \WebEd\Base\Core\Support\SortItemsWithChildrenHelper $sortHelper
+         * @var \WebEd\Base\Support\SortItemsWithChildrenHelper $sortHelper
          */
-        $sortHelper = app(\WebEd\Base\Core\Support\SortItemsWithChildrenHelper::class);
+        $sortHelper = app(\WebEd\Base\Support\SortItemsWithChildrenHelper::class);
         $sortHelper
             ->setChildrenProperty('child_cats')
             ->setItems($categories);
 
         return $sortHelper->sort();
-    }
-}
-
-if (!function_exists('get_posts_by_category')) {
-    /**
-     * @param array|int $categoryIds
-     * @param array $params
-     * @return \Illuminate\Support\Collection|\Illuminate\Pagination\LengthAwarePaginator
-     */
-    function get_posts_by_category($categoryIds, array $params = [])
-    {
-        $params = array_merge([
-            'status' => 'activated',
-            'take' => null,
-            'per_page' => 0,
-            'current_paged' => 1,
-            'order_by' => [
-                'posts.order' => 'ASC'
-            ],
-            'select' => [
-                'posts.id', 'posts.title', 'posts.slug', 'posts.created_at', 'posts.updated_at',
-                'posts.content', 'posts.description', 'posts.keywords', 'posts.order', 'posts.thumbnail'
-            ],
-            'group_by' => [
-                'posts.id', 'posts.title', 'posts.slug', 'posts.created_at', 'posts.updated_at',
-                'posts.content', 'posts.description', 'posts.keywords', 'posts.order', 'posts.thumbnail'
-            ]
-        ], $params);
-
-        /**
-         * @var \WebEd\Plugins\Blog\Repositories\PostRepository $postRepo
-         */
-        $postRepo = app(\WebEd\Plugins\Blog\Repositories\Contracts\PostRepositoryContract::class);
-        $result = $postRepo
-            ->where('posts.status', '=', $params['status'])
-            ->pushCriteria(new WebEd\Plugins\Blog\Criterias\Filter\WherePostBelongsToCategories((array)$categoryIds, $params['group_by']))
-            ->select($params['select'])
-            ->orderBy($params['order_by']);
-
-        if ($params['take']) {
-            return $result->take($params['take'])->get();
-        }
-
-        if ($params['per_page']) {
-            return $result->paginate($params['per_page'], ['*'], 'page', $params['current_paged']);
-        }
-
-        return $result->get();
     }
 }
